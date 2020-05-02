@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using WDCMLSDKBase;
-using WDCMLSDKDerived;
+using MDSDKBase;
+using MDSDKDerived;
 
-namespace WDCMLSDK
+namespace MDSDK
 {
 	/// <summary>
 	/// An object model representing the Win32 API ref docs.

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using WDCMLSDK;
-using WDCMLSDKDerived;
+using MDSDK;
+using MDSDKDerived;
 
-namespace WDCMLSDKBase
+namespace MDSDKBase
 {
 	/// <summary>
 	/// Abstract base class for an xml document editor, whether the document is WDCML, xtoc, or other.
@@ -55,7 +55,7 @@ namespace WDCMLSDKBase
 			{
 				ProgramBase.ConsoleWrite(fileInfo.FullName + " is invalid.", ConsoleWriteStyle.Error);
 				ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error);
-				throw new WDCMLSDKException();
+				throw new MDSDKException();
 			}
 		}
 
@@ -81,7 +81,7 @@ namespace WDCMLSDKBase
 			else
 			{
 				ProgramBase.ConsoleWrite("You called GetUniqueDescendant(\"" + name + "\"), but \"" + name + "\" is not unique.", ConsoleWriteStyle.Error);
-				throw new WDCMLSDKException();
+				throw new MDSDKException();
 			}
 		}
 
@@ -513,7 +513,7 @@ namespace WDCMLSDKBase
 			if (xtocFiles.Count != 1)
 			{
 				ProgramBase.ConsoleWrite(string.Format("Project folder {0} does not contain {1}", projectDirectoryInfo.Name, projectDirectoryInfo.Name + ".xtoc"), ConsoleWriteStyle.Error);
-				throw new WDCMLSDKException();
+				throw new MDSDKException();
 			}
 
 			return new Editor(xtocFiles[0], string.Empty);
@@ -535,7 +535,7 @@ namespace WDCMLSDKBase
 				{
 					editors.Add(new Editor(eachFileInfo));
 				}
-				//catch (WDCMLSDKException){}
+				//catch (MDSDKException){}
 			}
 			return editors;
 		}
@@ -864,7 +864,7 @@ namespace WDCMLSDKBase
 			{
 				if (!ProgramBase.DryRun)
 				{
-					Interaction.Shell(string.Format("sd edit {0}", fileName), AppWinStyle.Hide, true);
+					//Interaction.Shell(string.Format("sd edit {0}", fileName), AppWinStyle.Hide, true);
 				}
 				this.xDocument.Save(fileName);
 				ProgramBase.FilesSavedLog.Add(fileName);

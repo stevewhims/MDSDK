@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using WDCMLSDKBase;
-using WDCMLSDKDerived;
+using MDSDKBase;
+using MDSDKDerived;
 
-namespace WDCMLSDK
+namespace MDSDK
 {
 	/// <summary>
 	/// Represents the topic type for an API ref topic.
@@ -418,7 +418,7 @@ namespace WDCMLSDK
 				ProgramBase.ConsoleWrite("FAILED.", ConsoleWriteStyle.Error);
 				ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error);
 				ProgramBase.ConsoleWrite(string.Empty);
-				throw new WDCMLSDKException();
+				throw new MDSDKException();
 			}
 		}
 
@@ -467,7 +467,7 @@ namespace WDCMLSDK
 	//			ProgramBase.ConsoleWrite("FAILED.", ConsoleWriteStyle.Error);
 	//			ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error);
 	//			ProgramBase.ConsoleWrite(string.Empty);
-	//			throw new WDCMLSDKException();
+	//			throw new MDSDKException();
 	//		}
 	//	}
 	//}
