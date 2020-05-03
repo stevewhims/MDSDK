@@ -661,12 +661,8 @@ namespace MDSDKBase
 
             List<string> metroAndWindevDotTxt = null;
 
-            try
-            {
-                ProgramBase.LoadTextFileIntoStringList("metro.txt", ref metroAndWindevDotTxt, "MISSING metro.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
-                ProgramBase.LoadTextFileIntoStringList("windev.txt", ref metroAndWindevDotTxt, "MISSING windev.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
-            }
-            catch (MDSDKException) { }
+            //ProgramBase.LoadTextFileIntoStringList("metro.txt", ref metroAndWindevDotTxt, "MISSING metro.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
+            //ProgramBase.LoadTextFileIntoStringList("windev.txt", ref metroAndWindevDotTxt, "MISSING windev.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
 
             string docSetTypeDesc = "features and namespaces";
             if (docSet.DocSetType == DocSetType.ConceptualOnly) docSetTypeDesc = "features";
