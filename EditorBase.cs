@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace MDSDKBase
@@ -40,6 +41,8 @@ namespace MDSDKBase
         /// manage this value itself, but if necessary you can force the desired behavior by setting this field.
         /// </summary>
         public bool IsDirty = false;
+
+        public static Regex TwoSpacesRegex = new Regex("  ", RegexOptions.Compiled);
 
         /// <summary>
         /// Constructs a new EditorBase.

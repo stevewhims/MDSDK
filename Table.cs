@@ -1,14 +1,12 @@
 ﻿using MDSDKBase;
+using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace MDSDK
 {
-    // https://carlalexander.ca/beginners-guide-regular-expressions/
-    // https://www.regular-expressions.info/
-    // https://regex101.com/
-    // https://regexr.com/
-
     /// <summary>
     /// Represents a state during attempted parsing for a markdown table.
     /// </summary>
@@ -29,11 +27,11 @@ namespace MDSDK
         /// <summary>
         /// A string collection representing each cell in the row.
         /// </summary>
-        public List<string> rowCells = new List<string>();
+        public List<string> RowCells { get; private set; }
 
         public TableRow(List<string> rowCells)
         {
-            this.rowCells = rowCells;
+            this.RowCells = rowCells;
         }
     }
 
@@ -46,63 +44,125 @@ namespace MDSDK
         /// <summary>
         /// A string collection representing the column headings.
         /// </summary>
-        private List<string> columnHeadings = new List<string>();
+        public List<string> ColumnHeadings { get; private set; }
         /// <summary>
         /// A string collection representing each cell in a row.
         /// </summary>
-        private List<TableRow> rows = new List<TableRow>();
+        public List<TableRow> Rows { get; private set; }
 
-        public int RowCount { get { return this.rows.Count; } }
+        public int RowCount { get { return this.Rows.Count; } }
 
         public int FirstLineNumberOneBased { get; private set; }
         public int LastLineNumberOneBased { get; private set; }
         private static Regex RowRegex = new Regex(@"\|.*\|", RegexOptions.Compiled);
         private static Regex CellRegex = new Regex(@"\|[^\|]*", RegexOptions.Compiled);
 
-        public Table()
+        private Table(List<string> columnHeadings = null, List<TableRow> rows = null, int firstLineNumberOneBased = -1)
         {
+            this.ColumnHeadings = columnHeadings ?? new List<string>();
+            this.Rows = rows ?? new List<TableRow>();
+            this.FirstLineNumberOneBased = firstLineNumberOneBased;
+            this.LastLineNumberOneBased = -1;
         }
 
         public void RemoveRowNumberOneBased(int rowNumberOneBased)
         {
-            this.rows.RemoveAt(rowNumberOneBased - 1);
+            this.Rows.RemoveAt(rowNumberOneBased - 1);
         }
 
         public void RemoveRedundantColumns(params string[] redundantColumnHeadings)
         {
             var redundantColumnHeadingList = new List<string>();
-            var seenOne = new List<bool>();
+            var alreadyEncounteredFirstOccurrence = new List<bool>();
             foreach (string columnHeading in redundantColumnHeadings)
             {
                 redundantColumnHeadingList.Add(columnHeading);
-                seenOne.Add(false);
+                alreadyEncounteredFirstOccurrence.Add(false);
             }
 
             var indicesToDelete = new List<int>();
-            for (int ix = 0; ix < this.columnHeadings.Count; ++ix)
+            for (int ix = 0; ix < this.ColumnHeadings.Count; ++ix)
             {
                 int indexOfRedundantColumnHeading = -1;
-                if (-1 != (indexOfRedundantColumnHeading = redundantColumnHeadingList.IndexOf(this.columnHeadings[ix])))
+                if (-1 != (indexOfRedundantColumnHeading = redundantColumnHeadingList.IndexOf(this.ColumnHeadings[ix])))
                 {
-                    if (seenOne[indexOfRedundantColumnHeading])
+                    if (alreadyEncounteredFirstOccurrence[indexOfRedundantColumnHeading])
                     {
                         indicesToDelete.Add(ix);
                     }
                     else
                     {
-                        seenOne[indexOfRedundantColumnHeading] = true;
+                        alreadyEncounteredFirstOccurrence[indexOfRedundantColumnHeading] = true;
                     }
                 }
             }
 
             for (int ix = indicesToDelete.Count - 1; ix >= 0; --ix)
             {
-                this.columnHeadings.RemoveAt(indicesToDelete[ix]);
-                foreach (TableRow row in this.rows)
+                this.ColumnHeadings.RemoveAt(indicesToDelete[ix]);
+                foreach (TableRow row in this.Rows)
                 {
-                    row.rowCells.RemoveAt(indicesToDelete[ix]);
+                    row.RowCells.RemoveAt(indicesToDelete[ix]);
                 }
             }
+        }
+
+        public string RenderAsMarkdown()
+        {
+            var markdown = new StringBuilder();
+
+            markdown.Append("|");
+            foreach (var columnHeading in this.ColumnHeadings)
+            {
+                markdown.Append($" {columnHeading} |");
+            }
+
+            markdown.Append($"{Environment.NewLine}|");
+            foreach (var columnHeading in this.ColumnHeadings)
+            {
+                markdown.Append($" - |");
+            }
+
+            foreach (TableRow row in this.Rows)
+            {
+                markdown.Append($"{Environment.NewLine}|");
+                foreach (var cell in row.RowCells)
+                {
+                    markdown.Append($" {cell} |");
+                }
+            }
+
+            return markdown.ToString();
+        }
+
+        public (List<Table> tablePerRow, List<List<string>> skippedCellsPerRow) SliceHorizontally(List<string> columnHeadings, int firstColumnIndexZeroBased = 0)
+        {
+            var tablePerRow = new List<Table>();
+            var skippedCellsPerRow = new List<List<string>>();
+
+            foreach (TableRow row in this.Rows)
+            {
+                var skippedCellsThisRow = new List<string>();
+                var rows = new List<TableRow>();
+
+                for (int columnIndex = 0; columnIndex < this.ColumnHeadings.Count; ++columnIndex)
+                {
+                    if (columnIndex < firstColumnIndexZeroBased)
+                    {
+                        skippedCellsThisRow.Add(row.RowCells[columnIndex]);
+                    }
+                    else
+                    {
+                        var rowCells = new List<string>() { this.ColumnHeadings[columnIndex], row.RowCells[columnIndex] };
+                        rows.Add(new TableRow(rowCells));
+                    }
+                }
+
+                tablePerRow.Add(new Table(columnHeadings, rows));
+                skippedCellsPerRow.Add(skippedCellsThisRow);
+            }
+
+            return (tablePerRow, skippedCellsPerRow);
         }
 
         public static Table GetFirstTable(List<string> fileLines)
@@ -123,9 +183,7 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.HeaderColumnHeadingsRowFound;
-                            table = new Table();
-                            table.FirstLineNumberOneBased = lineNumber;
-                            table.columnHeadings = Table.RowToCells(currentTableRowString);
+                            table = new Table(Table.RowToCells(currentTableRowString), null, lineNumber);
                         }
                         break;
                     case TableParseState.HeaderColumnHeadingsRowFound:
@@ -133,7 +191,7 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.HeaderUnderlineRowFound;
-                            if (table.columnHeadings.Count != Table.RowToCells(currentTableRowString).Count)
+                            if (table.ColumnHeadings.Count != Table.RowToCells(currentTableRowString).Count)
                             {
                                 ProgramBase.ConsoleWrite("Cell counts in underline row and headings row and underline row don't match.", ConsoleWriteStyle.Error);
                                 throw new MDSDKException();
@@ -151,12 +209,12 @@ namespace MDSDK
                         {
                             tableParseState = TableParseState.BodyFound;
                             List<string> rowCells = Table.RowToCells(currentTableRowString);
-                            if (table.columnHeadings.Count != rowCells.Count)
+                            if (table.ColumnHeadings.Count != rowCells.Count)
                             {
                                 ProgramBase.ConsoleWrite("Cell counts in body row and header don't match.", ConsoleWriteStyle.Error);
                                 throw new MDSDKException();
                             }
-                            table.rows.Add(new TableRow(rowCells));
+                            table.Rows.Add(new TableRow(rowCells));
                         }
                         else
                         {
@@ -169,12 +227,12 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             List<string> rowCells = Table.RowToCells(currentTableRowString);
-                            if (table.columnHeadings.Count != rowCells.Count)
+                            if (table.ColumnHeadings.Count != rowCells.Count)
                             {
                                 ProgramBase.ConsoleWrite("Cell counts in body row and header don't match.", ConsoleWriteStyle.Error);
                                 throw new MDSDKException();
                             }
-                            table.rows.Add(new TableRow(rowCells));
+                            table.Rows.Add(new TableRow(rowCells));
                         }
                         else
                         {
@@ -210,6 +268,13 @@ namespace MDSDK
                 // To normalize the cell, remove the leading pipe and then trim.
                 // If that results in the empty string, then that's the cell contents.
                 string normalizedCell = cellMatches[ix].Value.Substring(1).Trim();
+
+                var twoSpacesMatches = EditorBase.TwoSpacesRegex.Matches(normalizedCell);
+                if (twoSpacesMatches.Count != 0)
+                {
+                    ProgramBase.ConsoleWrite(normalizedCell);
+                }
+
                 cells.Add(normalizedCell);
             }
             return cells;

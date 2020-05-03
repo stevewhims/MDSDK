@@ -1,0 +1,29 @@
+https://carlalexander.ca/beginners-guide-regular-expressions/
+https://www.regular-expressions.info/
+https://regex101.com/
+https://regexr.com/
+
+Anything that can be normalized via regex, how about defining that in the configuration file as a list of regex and replacements?
+
+Normalize topic
+Normalize BOM and encoding.
+Replace double space with single, recursively (exception: ignore *leading* whitespace within ```; OTHER CASES?).
+Replace double carriage-return with single, recursively.
+Replace yml delimters with plain
+Read yml fields into dictionary, sort some (like req), write out in a rational order (e.g. title, desc, date together).
+[!Note] => [!NOTE], so they're easier for the writer to spot.
+Etc.
+
+Normalize table
+Replace double hypthen with single.
+Cellpadding: single space after |, and if there are contents a single space after that (before the next |).
+Etc.
+MAKE A LIST OF SIMPLIFICATIONS WE CAN MAKE IN TABLES (and, e.g. within **Xxx**), such as \* to *, \_ to _, and so on.
+Do it with regex, figure out how to do replacements.
+
+To transform table. Table class with collection of col headers and collection of rows (each a collection of cells; one for each col).
+Load table into class. Read a list of col names that are repeated, and so ignore second and subsequent ones.
+Refactor each row into one new class (and a heading).
+Write out each class, normalized.
+
+Parameter types. Parse headers for APIs for types, figure out a link for each type. Insert types and links into each topic if not present. Normalize if present.
