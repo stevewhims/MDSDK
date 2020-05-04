@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Authentication;
 using MDSDK;
 using MDSDKDerived;
 
@@ -24,9 +25,9 @@ namespace MDSDKBase
         /// </summary>
         public const Int32 MaximumNumberOfTableRowsXMetaLCanHandleInATopic = 1800;
         /// <summary>
-        /// The folder in which your enlistment lives on your local machine. This is read from configuration.txt.
+        /// The folder on your local machine containing your cloned content repos. This is read from configuration.txt.
         /// </summary>
-        public static DirectoryInfo EnlistmentDirectoryInfo = null;
+        public static DirectoryInfo MyContentReposFolderDirectoryInfo = null; 
         /// <summary>
         /// The folder where the api ref topic stubs live on the network. This is read from configuration.txt.
         /// </summary>
@@ -36,18 +37,38 @@ namespace MDSDKBase
         /// </summary>
         public static string ExeFolderPath = null;
         /// <summary>
-        /// True if this is a dry run, otherwise false. A dry run attempts to save files to disk but it does not attempt to check out. This is read from configuration.txt.
+        /// A string containing the name of the content repo to target. This is read from configuration.txt.
         /// </summary>
-        public static bool DryRun = false;
+        public static string ContentRepo = null;
+        /// <summary>
+        /// A string containing the name of the branch to base the personal branch on. This is read from configuration.txt.
+        /// </summary>
+        public static string BaseBranch = null;
+        /// <summary>
+        /// A string containing your alias. This is read from configuration.txt.
+        /// </summary>
+        public static string MyAlias = null;
+        /// <summary>
+        /// A string containing the name of the personal branch to create. This is read from configuration.txt.
+        /// </summary>
+        public static string PersonalBranchName = null;
+        /// <summary>
+        /// True if this is a live run, otherwise false. A live run creates a branch, and edits/saves files; a dry run does none of those things. This is read from configuration.txt.
+        /// </summary>
+        public static bool LiveRun = false;
         /// <summary>
         /// True if an xtoc's topicURL points to a missing file, otherwise false. This is read from configuration.txt.
         /// </summary>
         //public static bool ThrowExceptionOnBadXTocTopicURL = true;
 
         // The trailing spaces are important so that they don't get included in the value that follows.
-        private const string MY_ENLISTMENT_FOLDER_CONFIG_KEY = "my_enlistment_folder ";
+        private const string MY_ENLISTMENT_FOLDER_CONFIG_KEY = "my_content_repos_folder ";
         private const string API_REF_STUB_FOLDER_CONFIG_KEY = "api_ref_stub_folder ";
-        private const string DRYRUN_CONFIG_KEY = "dryrun ";
+        private const string LIVE_RUN_CONFIG_KEY = "live_run ";
+        private const string CONTENT_REPO_CONFIG_KEY = "content_repo ";
+        private const string BASE_BRANCH_CONFIG_KEY = "base_branch ";
+        private const string MY_ALIAS_CONFIG_KEY = "my_alias ";
+        private const string PERSONAL_BRANCH_NAME_CONFIG_KEY = "personal_branch_name ";
         //private const string THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY = "throwexceptiononbadxtoctopicurl ";
         private const string UWP_PROJ_CONFIG_KEY = "uwp_proj ";
         private const string UWP_EXCLUDE_TYPE_CONFIG_KEY = "uwp_exclude_type ";
@@ -115,7 +136,7 @@ namespace MDSDKBase
 
                 this.OnRun();
 
-                Directory.SetCurrentDirectory(ProgramBase.ExeFolderPath);
+                ProgramBase.SetCurrentDirectory(ProgramBase.ExeFolderPath);
 
                 this.OutputFilesSavedLog();
                 this.OutputOtherLogs();
@@ -133,6 +154,17 @@ namespace MDSDKBase
         /// of <see cref="ProgramBase.OnRun"/>. That's where you'll do your work.
         /// </summary>
         protected abstract void OnRun();
+
+        public static void SetCurrentDirectory(DirectoryInfo directoryInfo)
+        {
+            ProgramBase.SetCurrentDirectory(directoryInfo.FullName);
+        }
+
+        public static void SetCurrentDirectory(string directoryFullName)
+        {
+            Directory.SetCurrentDirectory(directoryFullName);
+            ProgramBase.ConsoleWrite($"Current directory set to {directoryFullName}.", ConsoleWriteStyle.Success);
+        }
 
         private void ReadConfigurationFile()
         {
@@ -158,11 +190,11 @@ namespace MDSDKBase
 
                         if (this.GetConfigValue(currentLine, ProgramBase.MY_ENLISTMENT_FOLDER_CONFIG_KEY, ref value))
                         {
-                            string expandedEnlistmentFolderPath = Environment.ExpandEnvironmentVariables(value);
-                            ProgramBase.EnlistmentDirectoryInfo = new DirectoryInfo(expandedEnlistmentFolderPath);
+                            string expandedMyContentReposFolderPath = Environment.ExpandEnvironmentVariables(value);
+                            ProgramBase.MyContentReposFolderDirectoryInfo = new DirectoryInfo(expandedMyContentReposFolderPath);
                             if (value == "%SDKBX%")
                             {
-                                ProgramBase.EnlistmentDirectoryInfo = ProgramBase.EnlistmentDirectoryInfo.Parent;
+                                ProgramBase.MyContentReposFolderDirectoryInfo = ProgramBase.MyContentReposFolderDirectoryInfo.Parent;
                                 //ProgramBase.EnlistmentFolderPath = ProgramBase.EnlistmentDirectoryInfo.FullName;
                             }
                         }
@@ -170,9 +202,25 @@ namespace MDSDKBase
                         {
                             ProgramBase.ApiRefStubDirectoryInfo = new DirectoryInfo(value);
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.DRYRUN_CONFIG_KEY, ref value))
+                        else if (this.GetConfigValue(currentLine, ProgramBase.LIVE_RUN_CONFIG_KEY, ref value))
                         {
-                            ProgramBase.DryRun = (value == "1");
+                            ProgramBase.LiveRun = (value == "1");
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.CONTENT_REPO_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.ContentRepo = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.BASE_BRANCH_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.BaseBranch = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.MY_ALIAS_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.MyAlias = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.PERSONAL_BRANCH_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.PersonalBranchName = value;
                         }
                         //else if (this.GetConfigValue(currentLine, ProgramBase.THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY, ref value))
                         //{
@@ -207,9 +255,9 @@ namespace MDSDKBase
                 }
             }
 
-            if (ProgramBase.EnlistmentDirectoryInfo == null)
+            if (ProgramBase.MyContentReposFolderDirectoryInfo == null)
             {
-                ProgramBase.ConsoleWrite("MISSING ENLISTMENT FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This is the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.", ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite("MISSING ENLISTMENT FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This is the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.", ConsoleWriteStyle.Error);
                 throw new MDSDKException();
             }
 
@@ -219,7 +267,7 @@ namespace MDSDKBase
                 throw new MDSDKException();
             }
 
-            Directory.SetCurrentDirectory(ProgramBase.EnlistmentDirectoryInfo.FullName);
+            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
         }
 
         private bool GetConfigValue(string currentLine, string key, ref string value)
@@ -277,7 +325,7 @@ namespace MDSDKBase
 
             Dictionary<string, string> mappingsDict = new Dictionary<string, string>();
 
-            Directory.SetCurrentDirectory(ProgramBase.ExeFolderPath);
+            ProgramBase.SetCurrentDirectory(ProgramBase.ExeFolderPath);
 
             FileInfo fileInfo = new FileInfo(fileName);
             if (!fileInfo.Exists)
@@ -339,7 +387,7 @@ namespace MDSDKBase
                 }
             }
 
-            Directory.SetCurrentDirectory(ProgramBase.EnlistmentDirectoryInfo.FullName);
+            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
 
             return mappingsDict;
         }
@@ -355,7 +403,7 @@ namespace MDSDKBase
         {
             Dictionary<string, List<string>> mappingsDict = new Dictionary<string, List<string>>();
 
-            Directory.SetCurrentDirectory(ProgramBase.ExeFolderPath);
+            ProgramBase.SetCurrentDirectory(ProgramBase.ExeFolderPath);
 
             FileInfo fileInfo = new FileInfo(fileName);
             if (!fileInfo.Exists)
@@ -398,7 +446,7 @@ namespace MDSDKBase
                 }
             }
 
-            Directory.SetCurrentDirectory(ProgramBase.EnlistmentDirectoryInfo.FullName);
+            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
 
             return mappingsDict;
         }
@@ -497,16 +545,17 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="message">The message to print.</param>
         /// <param name="style">An optional color style. The default is light gray.</param>
-        /// <param name="writeLine">Optional: pass false if you don't want a newline after the message.</param>
-        public static void ConsoleWrite(string message, ConsoleWriteStyle style = ConsoleWriteStyle.Default, bool writeLine = true)
+        /// <param name="newLinesAfter">Optional, defaults to 1. The number of newlines to print after the message.</param>
+        public static void ConsoleWrite(string message, ConsoleWriteStyle style = ConsoleWriteStyle.Default, int newLinesAfter = 1)
         {
             ConsoleColor previousColor = Console.ForegroundColor;
             if (style == ConsoleWriteStyle.Highlight) Console.ForegroundColor = ConsoleColor.White;
-            if (style == ConsoleWriteStyle.Success) Console.ForegroundColor = ConsoleColor.Green;
-            if (style == ConsoleWriteStyle.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
-            if (style == ConsoleWriteStyle.Error) Console.ForegroundColor = ConsoleColor.Red;
+            else if (style == ConsoleWriteStyle.Success) Console.ForegroundColor = ConsoleColor.Green;
+            else if (style == ConsoleWriteStyle.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+            else if (style == ConsoleWriteStyle.Error) Console.ForegroundColor = ConsoleColor.Red;
+            else if (style == ConsoleWriteStyle.OutputFromAnotherProcess) Console.ForegroundColor = ConsoleColor.Blue;
             Console.Write(message);
-            if (writeLine) Console.Write(Environment.NewLine);
+            while (newLinesAfter-- > 0) Console.Write(Environment.NewLine);
             Console.ForegroundColor = previousColor;
         }
 
@@ -514,13 +563,13 @@ namespace MDSDKBase
         {
             ProgramBase.DeleteFileIfExists(ProgramBase.FilesSavedLog.Filename);
 
-            if (ProgramBase.DryRun)
+            if (ProgramBase.LiveRun)
             {
-                ProgramBase.ConsoleWrite("===FILES SAVED (DRYRUN)===", ConsoleWriteStyle.Highlight);
+                ProgramBase.ConsoleWrite("========FILES SAVED (LIVE RUN)========", ConsoleWriteStyle.Highlight);
             }
             else
             {
-                ProgramBase.ConsoleWrite("=======FILES SAVED========", ConsoleWriteStyle.Highlight);
+                ProgramBase.ConsoleWrite("=======FILES NOT SAVED (DRY RUN)======", ConsoleWriteStyle.Highlight);
             }
 
             if (ProgramBase.FilesSavedLog.Count > 0)
@@ -529,13 +578,13 @@ namespace MDSDKBase
             }
             else
             {
-                if (ProgramBase.DryRun)
+                if (ProgramBase.LiveRun)
                 {
-                    ProgramBase.ConsoleWrite("***None***", ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite("!!!No files saved. This was a live run, and it was a no-op!!!", ConsoleWriteStyle.Warning);
                 }
                 else
                 {
-                    ProgramBase.ConsoleWrite("!!!No files saved. This was not a dry-run and it was a no-op!!!", ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite("***None***", ConsoleWriteStyle.Warning);
                 }
             }
 
@@ -554,20 +603,20 @@ namespace MDSDKBase
 
             if (this.OutputOtherLog(ProgramBase.FileSaveErrorsLog))
             {
-                if (ProgramBase.DryRun)
+                if (ProgramBase.LiveRun)
                 {
-                    ProgramBase.ConsoleWrite("!!!Make files writable if you want to save them!!!", ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite("!!!There are file save errors!!!", ConsoleWriteStyle.Warning);
                 }
                 else
                 {
-                    ProgramBase.ConsoleWrite("!!!There are file save errors!!!", ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite("!!!Make files writable if you want to save them!!!", ConsoleWriteStyle.Warning);
                 }
             }
         }
 
         private void OutputOtherLogs()
         {
-            ProgramBase.ConsoleWrite("\n===========LOGS===========", ConsoleWriteStyle.Highlight);
+            ProgramBase.ConsoleWrite($"{Environment.NewLine}===========LOGS===========", ConsoleWriteStyle.Highlight);
 
             this.didWeWriteAnyOtherLogs = false;
 
@@ -661,8 +710,8 @@ namespace MDSDKBase
 
             List<string> metroAndWindevDotTxt = null;
 
-            //ProgramBase.LoadTextFileIntoStringList("metro.txt", ref metroAndWindevDotTxt, "MISSING metro.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
-            //ProgramBase.LoadTextFileIntoStringList("windev.txt", ref metroAndWindevDotTxt, "MISSING windev.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
+            //ProgramBase.LoadTextFileIntoStringList("metro.txt", ref metroAndWindevDotTxt, "MISSING metro.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
+            //ProgramBase.LoadTextFileIntoStringList("windev.txt", ref metroAndWindevDotTxt, "MISSING windev.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
 
             string docSetTypeDesc = "features and namespaces";
             if (docSet.DocSetType == DocSetType.ConceptualOnly) docSetTypeDesc = "features";
@@ -675,14 +724,14 @@ namespace MDSDKBase
             {
                 foreach (string eachProjectName in ProgramBase.UWPProjects)
                 {
-                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.EnlistmentDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
+                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
                 }
             }
             else
             {
                 foreach (string eachProjectName in ProgramBase.WinRTProjects)
                 {
-                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.EnlistmentDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
+                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
                 }
             }
 
@@ -712,14 +761,14 @@ namespace MDSDKBase
                 }
                 else
                 {
-                    ProgramBase.ConsoleWrite(eachDirectoryInfo.Name, ConsoleWriteStyle.Default, false);
+                    ProgramBase.ConsoleWrite(eachDirectoryInfo.Name, ConsoleWriteStyle.Default, 0);
                     if (eachDirectoryInfo != docSet.ProjectDirectoryInfos[docSet.ProjectDirectoryInfos.Count - 1])
                     {
-                        ProgramBase.ConsoleWrite(", ", ConsoleWriteStyle.Default, false);
+                        ProgramBase.ConsoleWrite(", ", ConsoleWriteStyle.Default, 0);
                     }
                     else
                     {
-                        ProgramBase.ConsoleWrite(".\n\n");
+                        ProgramBase.ConsoleWrite(".", ConsoleWriteStyle.Default, 2);
                     }
                 }
             }
@@ -996,14 +1045,15 @@ namespace MDSDKBase
         Highlight,
         Success,
         Warning,
-        Error
+        Error,
+        OutputFromAnotherProcess
     }
 
     /// <summary>
     /// Represents an output log file. You declare, initialize, register, and add to the log.
     /// ProgramBase will take care of writing the file to disk. A log can have headers. A log is only
     /// written to disk if it contains rows. ConsoleWriteStyle is the style used by ProgramBase to
-    /// inform the user that the log was written, and what it's filename is.
+    /// inform the user that the log was written, and what its filename is.
     /// </summary>
     internal class Log : List<string>
     {

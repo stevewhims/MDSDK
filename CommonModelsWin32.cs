@@ -51,7 +51,7 @@ namespace MDSDK
 			List<DirectoryInfo> projectDirectoryInfos = new List<DirectoryInfo>();
 			foreach (string eachProjectName in sortedProjectList.Keys)
 			{
-				projectDirectoryInfos.AddRange(ProgramBase.EnlistmentDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
+				projectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
 			}
 
 			ProgramBase.ConsoleWrite("Creating Win32 " + platformDesc + " docset", ConsoleWriteStyle.Success);
@@ -62,14 +62,14 @@ namespace MDSDK
 
 			foreach (DirectoryInfo eachProjectDirectoryInfo in projectDirectoryInfos)
 			{
-				ProgramBase.ConsoleWrite(eachProjectDirectoryInfo.Name, ConsoleWriteStyle.Default, false);
+				ProgramBase.ConsoleWrite(eachProjectDirectoryInfo.Name, ConsoleWriteStyle.Default, 0);
 				if (eachProjectDirectoryInfo != projectDirectoryInfos[projectDirectoryInfos.Count - 1])
 				{
-					ProgramBase.ConsoleWrite(", ", ConsoleWriteStyle.Default, false);
+					ProgramBase.ConsoleWrite(", ", ConsoleWriteStyle.Default, 0);
 				}
 				else
 				{
-					ProgramBase.ConsoleWrite(".\n\n");
+					ProgramBase.ConsoleWrite(".", ConsoleWriteStyle.Default, 2);
 				}
 				// For reference projects, the topic files should be in a folder with the same name as the project folder. But use the standard algorithm just to be sure.
 				apiRefModelWin32.ProcessProject(eachProjectDirectoryInfo.Name, EditorBase.GetEditorsForTopicsInProject(eachProjectDirectoryInfo));
@@ -81,7 +81,7 @@ namespace MDSDK
 		private static void AppendToProjectList(ref SortedList<string, string> sortedProjectList, string dotTxtFilename)
 		{
 			List<string> projectList = null;
-			ProgramBase.LoadTextFileIntoStringList(dotTxtFilename, ref projectList, "MISSING " + dotTxtFilename + ". This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_enlistment_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, desktop.txt, etc.");
+			ProgramBase.LoadTextFileIntoStringList(dotTxtFilename, ref projectList, "MISSING " + dotTxtFilename + ". This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, desktop.txt, etc.");
 
 			foreach (string eachProjectName in projectList)
 			{

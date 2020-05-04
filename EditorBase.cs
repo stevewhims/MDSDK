@@ -704,23 +704,12 @@ namespace MDSDKBase
         // if you call a method that already does so.
 
         /// <summary>
-        /// Finds the first table in the file, if any, cuts it, replaces it with a message, and
-        /// returns a Table object representing the cut table. The Editor marks itself dirty if
-        /// any table was found.
+        /// Returns a copy of the first markdown table in the topic, or null if no markdown table is found.
         /// </summary>
-        /// <param name="name">The name to give the new element (without namespace).</param>
-        /// <param name="content">Optional content to put inside the new element.</param>
-        /// <param name="parentTheNewElementToThisElement">Optional element to parent the new element to (the parent can be, but doesn't have to be, inside the document represented by the Editor).</param>
-        /// <returns>The new XElement.</returns>
-        public Table CutTable()
+        /// <returns>A Table object.</returns>
+        public Table GetFirstTable()
         {
-            Table table = Table.GetFirstTable(this.fileLines);
-            if (table != null)
-            {
-                // Cut it out and replace it. Need to know where it is.
-                this.IsDirty = true;
-            }
-            return table;
+            return Table.GetFirstTable(this.fileLines);
         }
 
         /// <summary>
@@ -917,7 +906,7 @@ namespace MDSDKBase
             string fileName = this.FileInfo.FullName;
             try
             {
-                if (!ProgramBase.DryRun)
+                if (ProgramBase.LiveRun)
                 {
                     Interaction.Shell(string.Format("sd edit {0}", fileName), AppWinStyle.Hide, true);
                 }

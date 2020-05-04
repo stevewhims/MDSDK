@@ -368,7 +368,7 @@ namespace MDSDK
 		{
 			try
 			{
-				ProgramBase.ConsoleWrite("Loading project ownership data... ", ConsoleWriteStyle.Default, false);
+				ProgramBase.ConsoleWrite("Loading project ownership data... ", ConsoleWriteStyle.Default, 0);
 				string sqlcmdArgs = "-W -X -s\",\" -S 10.185.184.7 -Q \"USE DDCM" +
 					"S_WS_DEV SELECT dbo.Reporting_Topic.[Project Name], dbo.Reporting_Topic.Writer FROM dbo.Reporting_Topic WHERE dbo.Reporting_Topic.[Team Name]='_XmetaLProj" +
 					"ects' AND dbo.Reporting_Topic.Title LIKE '$$%%' ORDER BY dbo.Reporting_Topic.[Project Name]\"";
@@ -380,7 +380,7 @@ namespace MDSDK
 				info.RedirectStandardInput = true;
 				info.RedirectStandardOutput = true;
 
-				using (Process exeProcess = Process.Start(info))
+				using (var exeProcess = Process.Start(info))
 				{
 					exeProcess.StandardInput.WriteLine("sqlcmd " + sqlcmdArgs);
 					string projectOwnersList = exeProcess.StandardOutput.ReadToEnd();
@@ -407,17 +407,15 @@ namespace MDSDK
 							}
 						}
 					}
-					Directory.SetCurrentDirectory(ProgramBase.EnlistmentDirectoryInfo.FullName);
-					ProgramBase.ConsoleWrite("SUCCEEDED.", ConsoleWriteStyle.Success);
-					ProgramBase.ConsoleWrite(string.Empty);
+					ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
+					ProgramBase.ConsoleWrite("SUCCEEDED.", ConsoleWriteStyle.Success, 2);
 					return mappingsDict;
 				}
 			}
 			catch (Exception ex)
 			{
 				ProgramBase.ConsoleWrite("FAILED.", ConsoleWriteStyle.Error);
-				ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error);
-				ProgramBase.ConsoleWrite(string.Empty);
+				ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error, 2);
 				throw new MDSDKException();
 			}
 		}
@@ -459,14 +457,12 @@ namespace MDSDK
 	//				exeProcess.WaitForExit();
 	//			}
 
-	//			ProgramBase.ConsoleWrite("SUCCEEDED.", ConsoleWriteStyle.Success);
-	//			ProgramBase.ConsoleWrite(string.Empty);
+	//			ProgramBase.ConsoleWrite("SUCCEEDED.", ConsoleWriteStyle.Success, 2);
 	//		}
 	//		catch (Exception ex)
 	//		{
 	//			ProgramBase.ConsoleWrite("FAILED.", ConsoleWriteStyle.Error);
-	//			ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error);
-	//			ProgramBase.ConsoleWrite(string.Empty);
+	//			ProgramBase.ConsoleWrite(ex.Message, ConsoleWriteStyle.Error, 2);
 	//			throw new MDSDKException();
 	//		}
 	//	}
