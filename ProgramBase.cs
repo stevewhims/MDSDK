@@ -39,11 +39,35 @@ namespace MDSDKBase
         /// <summary>
         /// A string containing the name of the content repo to target. This is read from configuration.txt.
         /// </summary>
-        public static string ContentRepo = null;
+        public static string ContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the Win32 and COM conceptual repo. This is read from configuration.txt.
+        /// </summary>
+        public static string Win32ConceptualContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the Win32 and COM API ref repo. This is read from configuration.txt.
+        /// </summary>
+        public static string Win32ApiReferenceContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the WinRT conceptual repo. This is read from configuration.txt.
+        /// </summary>
+        public static string WinRTConceptualContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the WinRT API ref repo. This is read from configuration.txt.
+        /// </summary>
+        public static string WinRTApiReferenceContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the WinRT-related repo. This is read from configuration.txt.
+        /// </summary>
+        public static string WinRTRelatedContentRepoName = null;
+        /// <summary>
+        /// A string containing the name of the Win32 and COM API ref build repo. This is read from configuration.txt.
+        /// </summary>
+        public static string Win32ApiReferenceBuildRepoName = null;
         /// <summary>
         /// A string containing the name of the branch to base the personal branch on. This is read from configuration.txt.
         /// </summary>
-        public static string BaseBranch = null;
+        public static string BaseBranchName = null;
         /// <summary>
         /// A string containing your alias. This is read from configuration.txt.
         /// </summary>
@@ -52,6 +76,10 @@ namespace MDSDKBase
         /// A string containing the name of the personal branch to create. This is read from configuration.txt.
         /// </summary>
         public static string PersonalBranchName = null;
+        /// <summary>
+        /// A string containing the Git commit message for this run. This is read from configuration.txt.
+        /// </summary>
+        public static string CommitMessage = null;
         /// <summary>
         /// True if this is a live run, otherwise false. A live run creates a branch, and edits/saves files; a dry run does none of those things. This is read from configuration.txt.
         /// </summary>
@@ -62,13 +90,21 @@ namespace MDSDKBase
         //public static bool ThrowExceptionOnBadXTocTopicURL = true;
 
         // The trailing spaces are important so that they don't get included in the value that follows.
-        private const string MY_ENLISTMENT_FOLDER_CONFIG_KEY = "my_content_repos_folder ";
-        private const string API_REF_STUB_FOLDER_CONFIG_KEY = "api_ref_stub_folder ";
+        // Although, I really ought to change that to ignore whitespace between key and value, because
+        // some folks are whitespace-blind, and will put any number of spaces in any number of places.
+        private const string MY_CONTENT_REPOS_FOLDER_CONFIG_KEY = "my_content_repos_folder ";
+        private const string WIN32_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY = "win32_conceptual_content_repo_name ";
+        private const string WIN32_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY = "win32_api_reference_content_repo_name ";
+        private const string WINRT_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_conceptual_content_repo_name ";
+        private const string WINRT_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_api_reference_content_repo_name ";
+        private const string WINRT_RELATED_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_related_content_repo_name ";
+        private const string WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY = "win32_and_com_api_reference_build_repo_name ";
         private const string LIVE_RUN_CONFIG_KEY = "live_run ";
-        private const string CONTENT_REPO_CONFIG_KEY = "content_repo ";
-        private const string BASE_BRANCH_CONFIG_KEY = "base_branch ";
+        private const string CONTENT_REPO_NAME_CONFIG_KEY = "content_repo_name ";
+        private const string BASE_BRANCH_NAME_CONFIG_KEY = "base_branch_name ";
         private const string MY_ALIAS_CONFIG_KEY = "my_alias ";
         private const string PERSONAL_BRANCH_NAME_CONFIG_KEY = "personal_branch_name ";
+        private const string COMMIT_MESSAGE_CONFIG_KEY = "commit_message ";
         //private const string THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY = "throwexceptiononbadxtoctopicurl ";
         private const string UWP_PROJ_CONFIG_KEY = "uwp_proj ";
         private const string UWP_EXCLUDE_TYPE_CONFIG_KEY = "uwp_exclude_type ";
@@ -188,31 +224,46 @@ namespace MDSDKBase
                     {
                         string value = null;
 
-                        if (this.GetConfigValue(currentLine, ProgramBase.MY_ENLISTMENT_FOLDER_CONFIG_KEY, ref value))
+                        if (this.GetConfigValue(currentLine, ProgramBase.MY_CONTENT_REPOS_FOLDER_CONFIG_KEY, ref value))
                         {
                             string expandedMyContentReposFolderPath = Environment.ExpandEnvironmentVariables(value);
                             ProgramBase.MyContentReposFolderDirectoryInfo = new DirectoryInfo(expandedMyContentReposFolderPath);
-                            if (value == "%SDKBX%")
-                            {
-                                ProgramBase.MyContentReposFolderDirectoryInfo = ProgramBase.MyContentReposFolderDirectoryInfo.Parent;
-                                //ProgramBase.EnlistmentFolderPath = ProgramBase.EnlistmentDirectoryInfo.FullName;
-                            }
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.API_REF_STUB_FOLDER_CONFIG_KEY, ref value))
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
-                            ProgramBase.ApiRefStubDirectoryInfo = new DirectoryInfo(value);
+                            ProgramBase.Win32ConceptualContentRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.Win32ApiReferenceContentRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.WinRTConceptualContentRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.WinRTApiReferenceContentRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_RELATED_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.WinRTRelatedContentRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.Win32ApiReferenceBuildRepoName = value;
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.LIVE_RUN_CONFIG_KEY, ref value))
                         {
                             ProgramBase.LiveRun = (value == "1");
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.CONTENT_REPO_CONFIG_KEY, ref value))
+                        else if (this.GetConfigValue(currentLine, ProgramBase.CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
-                            ProgramBase.ContentRepo = value;
+                            ProgramBase.ContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.BASE_BRANCH_CONFIG_KEY, ref value))
+                        else if (this.GetConfigValue(currentLine, ProgramBase.BASE_BRANCH_NAME_CONFIG_KEY, ref value))
                         {
-                            ProgramBase.BaseBranch = value;
+                            ProgramBase.BaseBranchName = value;
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.MY_ALIAS_CONFIG_KEY, ref value))
                         {
@@ -221,6 +272,10 @@ namespace MDSDKBase
                         else if (this.GetConfigValue(currentLine, ProgramBase.PERSONAL_BRANCH_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.PersonalBranchName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.COMMIT_MESSAGE_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.CommitMessage = value;
                         }
                         //else if (this.GetConfigValue(currentLine, ProgramBase.THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY, ref value))
                         //{
@@ -257,13 +312,7 @@ namespace MDSDKBase
 
             if (ProgramBase.MyContentReposFolderDirectoryInfo == null)
             {
-                ProgramBase.ConsoleWrite("MISSING ENLISTMENT FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This is the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.", ConsoleWriteStyle.Error);
-                throw new MDSDKException();
-            }
-
-            if (ProgramBase.ApiRefStubDirectoryInfo == null)
-            {
-                ProgramBase.ConsoleWrite("MISSING API REFERENCE STUB FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: api_ref_stub_folder \\\\wcpub-dc-pub2\\winrt\\latest. This is the folder that contains the stubs.", ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite("MISSING CONTENT REPOS FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: my_content_repos_folder %USERPROFILE%\\source\\repos. This is the folder on your local machine containing your cloned content repos.", ConsoleWriteStyle.Error);
                 throw new MDSDKException();
             }
 

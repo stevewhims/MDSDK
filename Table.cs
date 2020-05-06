@@ -54,8 +54,8 @@ namespace MDSDK
 
         public int FirstLineNumberOneBased { get; private set; }
         public int LastLineNumberOneBased { get; private set; }
-        private static Regex RowRegex = new Regex(@"\|.*\|", RegexOptions.Compiled);
-        private static Regex CellRegex = new Regex(@"\|[^\|]*", RegexOptions.Compiled);
+        private static Regex TableRowRegex = new Regex(@"/\|.*\|/", RegexOptions.Compiled);
+        private static Regex TableCellRegex = new Regex(@"/\|[^\|]*/", RegexOptions.Compiled);
 
         private Table(List<string> columnHeadings = null, List<TableRow> rows = null, int firstLineNumberOneBased = -1)
         {
@@ -251,7 +251,7 @@ namespace MDSDK
 
         private static string LineToTableRow(string line)
         {
-            var rowMatches = Table.RowRegex.Matches(line);
+            var rowMatches = Table.TableRowRegex.Matches(line);
             if (rowMatches.Count == 1)
                 return rowMatches[0].Value;
             else
@@ -261,7 +261,7 @@ namespace MDSDK
         private static List<string> RowToCells(string row)
         {
             var cells = new List<string>();
-            var cellMatches = Table.CellRegex.Matches(row);
+            var cellMatches = Table.TableCellRegex.Matches(row);
 
             for (int ix = 0; ix < cellMatches.Count - 1; ++ix)
             {

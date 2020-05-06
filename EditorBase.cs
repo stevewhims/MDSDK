@@ -42,7 +42,7 @@ namespace MDSDKBase
         /// </summary>
         public bool IsDirty = false;
 
-        public static Regex TwoSpacesRegex = new Regex("  ", RegexOptions.Compiled);
+        public static Regex TwoSpacesRegex = new Regex("/  /", RegexOptions.Compiled);
 
         /// <summary>
         /// Constructs a new EditorBase.

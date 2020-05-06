@@ -1,18 +1,27 @@
-// Edit this with the path to the folder on your local machine containing your cloned content repos. This is the folder on your local machine that contains the windows-uwp-pr and winrt-api folders, among others.
-// It's ok for the path to contain spaces. Don't put quotes around it.
+// Edit this with the path to the folder on your local machine containing your cloned content repos.
+// This is the folder on your local machine that contains (typically) the windows-uwp-pr and winrt-api folders, among others.
+// It's ok for the path to contain spaces. Don't put quotes around it, don't escape slashes.
 
-my_content_repos_folder C:\Users\stwhi\source\repos
-api_ref_stub_folder \\wcpub-dc-pub2\winrt\latest
+my_content_repos_folder %USERPROFILE%\source\repos
+
+win32_conceptual_content_repo_name win32-pr
+win32_api_reference_content_repo_name sdk-api
+winrt_conceptual_content_repo_name windows-uwp-pr
+winrt_api_reference_content_repo_name winrt-api
+winrt_related_content_repo_name winrt-related
+
+win32_api_reference_build_repo_name sdk-api-build
 
 // Set live_run to 0 or 1.
 // 0: Means, no, this is not a live run, it's a dry run. So don't create a branch, and don't edit nor save topics.
 // 1: Means, yes, this is a live run. So DO create a branch, and DO edit and save topics.
 
 live_run 0
-content_repo win32-pr
-base_branch master
+content_repo_name win32-pr
+base_branch_name master
 my_alias stwhi
 personal_branch_name refactor-mega-tables-3
+commit_message commit message
 
 // Set throwexceptiononbadxtoctopicurl to 1 or 0.
 // 1: Means throw an exception and terminate the program if an xtoc's topicURL points to a missing file.

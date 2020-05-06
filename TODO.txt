@@ -27,3 +27,5 @@ Refactor each row into one new class (and a heading).
 Write out each class, normalized.
 
 Parameter types. Parse headers for APIs for types, figure out a link for each type. Insert types and links into each topic if not present. Normalize if present.
+
+Stubs. Update ProgramBase.ApiRefStubDirectoryInfo with the location of the stubs. Course, you'll have to get on to the right branch for that.
