@@ -2,6 +2,7 @@ https://carlalexander.ca/beginners-guide-regular-expressions/
 https://www.regular-expressions.info/
 https://regex101.com/
 https://regexr.com/
+https://www.princeton.edu/~mlovett/reference/Regular-Expressions.pdf
 
 Anything that can be normalized via regex, how about defining that in the configuration file as a list of regex and replacements?
 
@@ -9,9 +10,11 @@ Normalize topic
 Normalize BOM and encoding.
 Replace double space with single, recursively (exception: ignore *leading* whitespace within ```; OTHER CASES?).
 Replace double carriage-return with single, recursively.
+Ensure single carriage-return at end of file.
 Replace yml delimters with plain
 Read yml fields into dictionary, sort some (like req), write out in a rational order (e.g. title, desc, date together).
 [!Note] => [!NOTE], so they're easier for the writer to spot.
+In a Win32 API ref topic, delete the H1.
 Etc.
 
 Normalize table

@@ -9,8 +9,8 @@ win32_api_reference_content_repo_name sdk-api
 winrt_conceptual_content_repo_name windows-uwp-pr
 winrt_api_reference_content_repo_name winrt-api
 winrt_related_content_repo_name winrt-related
-
 win32_api_reference_build_repo_name sdk-api-build
+windows_sdk_win32_header_files_folder C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um
 
 // Set live_run to 0 or 1.
 // 0: Means, no, this is not a live run, it's a dry run. So don't create a branch, and don't edit nor save topics.

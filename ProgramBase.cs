@@ -27,7 +27,7 @@ namespace MDSDKBase
         /// <summary>
         /// The folder on your local machine containing your cloned content repos. This is read from configuration.txt.
         /// </summary>
-        public static DirectoryInfo MyContentReposFolderDirectoryInfo = null; 
+        public static DirectoryInfo MyContentReposFolderDirectoryInfo = null;
         /// <summary>
         /// The folder where the api ref topic stubs live on the network. This is read from configuration.txt.
         /// </summary>
@@ -65,6 +65,10 @@ namespace MDSDKBase
         /// </summary>
         public static string Win32ApiReferenceBuildRepoName = null;
         /// <summary>
+        /// A string containing the name of the folder containing the Windows SDK Win32 header files. This is read from configuration.txt.
+        /// </summary>
+        public static string WindowsSDKWin32HeaderFilesFolderName = null;
+        /// <summary>
         /// A string containing the name of the branch to base the personal branch on. This is read from configuration.txt.
         /// </summary>
         public static string BaseBranchName = null;
@@ -98,7 +102,8 @@ namespace MDSDKBase
         private const string WINRT_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_conceptual_content_repo_name ";
         private const string WINRT_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_api_reference_content_repo_name ";
         private const string WINRT_RELATED_CONTENT_REPO_NAME_CONFIG_KEY = "winrt_related_content_repo_name ";
-        private const string WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY = "win32_and_com_api_reference_build_repo_name ";
+        private const string WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY = "win32_api_reference_build_repo_name ";
+        private const string WINDOWS_SDK_WIN32_HEADER_FILES_FOLDER_CONFIG_KEY = "windows_sdk_win32_header_files_folder ";
         private const string LIVE_RUN_CONFIG_KEY = "live_run ";
         private const string CONTENT_REPO_NAME_CONFIG_KEY = "content_repo_name ";
         private const string BASE_BRANCH_NAME_CONFIG_KEY = "base_branch_name ";
@@ -199,7 +204,7 @@ namespace MDSDKBase
         public static void SetCurrentDirectory(string directoryFullName)
         {
             Directory.SetCurrentDirectory(directoryFullName);
-            ProgramBase.ConsoleWrite($"Current directory set to {directoryFullName}.", ConsoleWriteStyle.Success);
+            ProgramBase.ConsoleWrite($"Current directory set to {directoryFullName}", ConsoleWriteStyle.Success);
         }
 
         private void ReadConfigurationFile()
@@ -252,6 +257,10 @@ namespace MDSDKBase
                         else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.Win32ApiReferenceBuildRepoName = value;
+                        }
+                        else if (this.GetConfigValue(currentLine, ProgramBase.WINDOWS_SDK_WIN32_HEADER_FILES_FOLDER_CONFIG_KEY, ref value))
+                        {
+                            ProgramBase.WindowsSDKWin32HeaderFilesFolderName = value;
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.LIVE_RUN_CONFIG_KEY, ref value))
                         {
@@ -728,6 +737,29 @@ namespace MDSDKBase
     }
 
     /// <summary>
+    /// Represents a 1-element stack used to push the current directory before
+    /// changing it, and then pop it back afterward. The class implements
+    /// IDisposable for syntax convenience and safety.
+    /// </summary>
+    internal class ChangeAndRestoreCurrentDirectory : IDisposable
+    {
+        private string pushedCurrentDirectory = null;
+
+        public ChangeAndRestoreCurrentDirectory(DirectoryInfo directoryInfo) : this(directoryInfo.FullName) { }
+
+        public ChangeAndRestoreCurrentDirectory(string directoryFullName)
+        {
+            this.pushedCurrentDirectory = Directory.GetCurrentDirectory();
+            ProgramBase.SetCurrentDirectory(directoryFullName);
+        }
+
+        public void Dispose()
+        {
+            ProgramBase.SetCurrentDirectory(this.pushedCurrentDirectory);
+        }
+    }
+
+    /// <summary>
     /// Represents a docset, defined by a platform specification (WinRT vs UWP)
     /// and a content type specification (conceptual vs ref) axes. You can query
     /// for a flat list of FileInfo, a flat list of Editor, or a hierarchical
@@ -875,7 +907,7 @@ namespace MDSDKBase
                 {
                     if (getAllFilesInFolderIgnoringXtoc == false)
                     {
-                        fileInfos.AddRange(EditorBase.GetFileInfosForTopicsInProject(eachProjectDirectoryInfo));
+                        fileInfos.AddRange(EditorBase.GetFileInfosForTopicsInFolder(eachProjectDirectoryInfo));
                     }
                     else
                     {
@@ -998,7 +1030,7 @@ namespace MDSDKBase
                         if (ProgramBase.ReferenceProjectPrefixes.Contains(prefix))
                         {
                             // For reference projects, the topic files should be in a folder with the same name as the project folder. But use the standard algorithm just to be sure.
-                            NamespaceWinRT.ProcessNamespaceWinRT(eachProjectDirectoryInfo.Name, EditorBase.GetEditorsForTopicsInProject(eachProjectDirectoryInfo), ref this.apiRefModel);
+                            NamespaceWinRT.ProcessNamespaceWinRT(eachProjectDirectoryInfo.Name, EditorBase.GetEditorsForTopicsInFolder(eachProjectDirectoryInfo), ref this.apiRefModel);
                         }
                     }
 

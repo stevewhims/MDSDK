@@ -15,8 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		Table.cs = Table.cs
 		TODO.txt = TODO.txt
-		Win32BuiltTopicLexer.cs = Win32BuiltTopicLexer.cs
-		Win32HeaderLexer.cs = Win32HeaderLexer.cs
+		Win32APIReferenceBuiltTopicsLexer.cs = Win32APIReferenceBuiltTopicsLexer.cs
+		Win32APIReferenceContentTopicsLexer.cs = Win32APIReferenceContentTopicsLexer.cs
+		WindowsSDKWin32HeaderFileLexer.cs = WindowsSDKWin32HeaderFileLexer.cs
 	EndProjectSection
 EndProject
 Global

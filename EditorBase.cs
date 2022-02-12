@@ -42,7 +42,19 @@ namespace MDSDKBase
         /// </summary>
         public bool IsDirty = false;
 
-        public static Regex TwoSpacesRegex = new Regex("/  /", RegexOptions.Compiled);
+        private static Regex DeconstructMarkdownLinkRegex = new Regex(@"\[(?<link_text>.*)\]\((?<link_url>.*)\)", RegexOptions.Compiled);
+        private static Regex TwoSpacesRegex = new Regex("  ", RegexOptions.Compiled);
+
+        private static string IndexMdCallbackFunctionsH2 = "## Callback functions";
+        private static string IndexMdClassesH2 = "## Classes";
+        private static string IndexMdEnumerationsH2 = "## Enumerations";
+        private static string IndexMdFunctionsH2 = "## Functions";
+        private static string IndexMdInterfacesH2 = "## Interfaces";
+        private static string IndexMdIoctlsH2 = "## IOCTLs";
+        private static string IndexMdStructuresH2 = "## Structures";
+
+        private static string InterfaceTopicMethodsH2 = "## Methods";
+        private static string StructureTopicStructFieldsH2 = "## -struct-fields";
 
         /// <summary>
         /// Constructs a new EditorBase.
@@ -77,6 +89,25 @@ namespace MDSDKBase
         public bool IsValid { get { return this.xDocument != null; } }
 
         #region Methods that don't modify
+        public static (string, string) DeconstructMarkdownLink(string markdownLink)
+        {
+            var matches = EditorBase.DeconstructMarkdownLinkRegex.Matches(markdownLink);
+            if (matches.Count == 1)
+            {
+                return (matches[0].Groups["link_text"].Value, matches[0].Groups["link_url"].Value);
+            }
+            else
+            {
+                ProgramBase.ConsoleWrite($"Markdown link {markdownLink} is malformed.");
+                throw new MDSDKException();
+            }
+        }
+
+        public static MatchCollection RetrieveMatchesForTwoSpaces(string content)
+        {
+            return EditorBase.TwoSpacesRegex.Matches(content);
+        }
+
         /// <summary>
         /// Gets the single unique descendant with the specified name. Throws if the name is not unique.
         /// </summary>
@@ -117,6 +148,155 @@ namespace MDSDKBase
             {
                 return null;
             }
+        }
+
+        public Table GetFunctionsInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdFunctionsH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetEnumerationsInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdEnumerationsH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetStructuresInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdStructuresH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetInterfacesInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdInterfacesH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetCallbackFunctionsInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdCallbackFunctionsH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetClassesInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdClassesH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetIoctlsInIndexMd()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.IndexMdIoctlsH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        public Table GetMethodsInInterfaceTopic()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.InterfaceTopicMethodsH2)
+                {
+                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Retrieves the 1-based line number of the beginning of the fields section in a Win32 structure topic.
+        /// </summary>
+        /// <returns>The 1-based line number, or -1 if not found.</returns>
+        public int GetFieldsSection1BasedLineNumber()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+                if (eachLineTrimmed == EditorBase.StructureTopicStructFieldsH2)
+                {
+                    return ix + 1;
+                }
+            }
+            return -1;
+        }
+
+        public string GetFirstNoBreakSpaceLine()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+
+                if (eachLineTrimmed.Contains("\u00A0"))
+                {
+                    return eachLineTrimmed;
+                }
+            }
+            return null;
+        }
+
+        public string GetFirstAsteriskInYamlDescriptionLine()
+        {
+            for (int ix = 0; ix < this.fileLines.Count; ++ix)
+            {
+                string eachLineTrimmed = this.fileLines[ix].Trim();
+
+                if (eachLineTrimmed.StartsWith("description: *"))
+                {
+                    return eachLineTrimmed;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -289,18 +469,19 @@ namespace MDSDKBase
             return null;
         }
 
-        public string GetMetadataAtMsdnId()
+        public string GetYamlApiName()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
-            if (metadata != null)
-            {
-                XAttribute xAttribute = metadata.Attribute("msdnID");
-                if (xAttribute != null)
-                {
-                    return xAttribute.Value;
-                }
-            }
-            return null;
+            return "ACTRL_ACCESSA";
+            //XElement metadata = this.GetUniqueDescendant("metadata");
+            //if (metadata != null)
+            //{
+            //    XAttribute xAttribute = metadata.Attribute("api_name");
+            //    if (xAttribute != null)
+            //    {
+            //        return xAttribute.Value;
+            //    }
+            //}
+            //return null;
         }
 
         /// <summary>
@@ -515,22 +696,23 @@ namespace MDSDKBase
         }
 
         /// <summary>
-        /// Factory method that creates an Editor for the named topic file that is inside
-        /// the specified project folder. Throws if file not found.
+        /// Factory method that creates an Editor for the named file that is inside
+        /// the specified folder. Optionally throws if file not found.
         /// </summary>
-        /// <param name="projectDirectoryInfo">The folder containing the project.</param>
+        /// <param name="directoryInfo">The folder containing the file.</param>
         /// <param name="fileName">The name of the file for which to retrieve an editor.</param>
         /// <returns>An Editor object for the file in the folder.</returns>
-        public static Editor GetEditorForTopicFileName(DirectoryInfo projectDirectoryInfo, string fileName)
+        public static Editor GetEditorForTopicFileName(DirectoryInfo directoryInfo, string fileName, bool throwIfNotFound = true)
         {
-            List<FileInfo> fileInfos = projectDirectoryInfo.GetFiles(fileName).ToList();
-            if (fileInfos.Count != 1)
+            List<FileInfo> fileInfos = directoryInfo.GetFiles(fileName).ToList();
+            if (fileInfos.Count == 1)
             {
-                ProgramBase.ConsoleWrite($"Project folder {projectDirectoryInfo.Name} does not contain {fileName}", ConsoleWriteStyle.Error);
-                throw new MDSDKException();
+                return new Editor(fileInfos[0]);
             }
 
-            return new Editor(fileInfos[0]);
+            ProgramBase.ConsoleWrite($"folder \"{directoryInfo.Name}\" doesn't contain \"{fileName}\" ", ConsoleWriteStyle.Error, 0);
+            if (throwIfNotFound) throw new MDSDKException();
+            return null;
         }
 
         /// <summary>
@@ -553,13 +735,13 @@ namespace MDSDKBase
         }
 
         /// <summary>
-        /// Factory method that creates an Editor for each topic file inside the specified project folder.
+        /// Factory method that creates an Editor for each topic file inside the specified folder.
         /// </summary>
-        /// <param name="projectDirectoryInfo">A DirectoryInfo representing the project folder.</param>
+        /// <param name="folderDirectoryInfo">A DirectoryInfo representing the folder.</param>
         /// <returns>A list of Editor objects for the topics.</returns>
-        public static List<Editor> GetEditorsForTopicsInProject(DirectoryInfo projectDirectoryInfo)
+        public static List<Editor> GetEditorsForTopicsInFolder(DirectoryInfo folderDirectoryInfo)
         {
-            List<FileInfo> fileInfos = EditorBase.GetFileInfosForTopicsInProject(projectDirectoryInfo);
+            List<FileInfo> fileInfos = EditorBase.GetFileInfosForTopicsInFolder(folderDirectoryInfo);
 
             List<Editor> editors = new List<Editor>();
             foreach (FileInfo eachFileInfo in fileInfos)
@@ -574,13 +756,13 @@ namespace MDSDKBase
         }
 
         /// <summary>
-        /// Factory method that creates a FileInfo for each topic file inside the specified project folder.
+        /// Factory method that creates a FileInfo for each topic file inside the specified folder.
         /// </summary>
-        /// <param name="projectDirectoryInfo">A DirectoryInfo representing the project folder.</param>
+        /// <param name="folderDirectoryInfo">A DirectoryInfo representing the folder.</param>
         /// <returns>A list of FileInfo objects for the topics.</returns>
-        public static List<FileInfo> GetFileInfosForTopicsInProject(DirectoryInfo projectDirectoryInfo)
+        public static List<FileInfo> GetFileInfosForTopicsInFolder(DirectoryInfo folderDirectoryInfo)
         {
-            return EditorBase.GetFileInfosForTopicsInXtoc(projectDirectoryInfo, EditorBase.GetEditorForXtoc(projectDirectoryInfo));
+            return EditorBase.GetFileInfosForTopicsInXtoc(folderDirectoryInfo, EditorBase.GetEditorForXtoc(folderDirectoryInfo));
         }
 
         private static List<FileInfo> GetFileInfosForTopicsInXtoc(DirectoryInfo projectDirectoryInfo, Editor xtocEditor)
@@ -709,7 +891,7 @@ namespace MDSDKBase
         /// <returns>A Table object.</returns>
         public Table GetFirstTable()
         {
-            return Table.GetFirstTable(this.fileLines);
+            return Table.GetNextTable(this.FileInfo.FullName, this.fileLines);
         }
 
         /// <summary>

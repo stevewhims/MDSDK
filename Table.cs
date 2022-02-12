@@ -54,8 +54,8 @@ namespace MDSDK
 
         public int FirstLineNumberOneBased { get; private set; }
         public int LastLineNumberOneBased { get; private set; }
-        private static Regex TableRowRegex = new Regex(@"/\|.*\|/", RegexOptions.Compiled);
-        private static Regex TableCellRegex = new Regex(@"/\|[^\|]*/", RegexOptions.Compiled);
+        private static Regex TableRowRegex = new Regex(@"\|.*\|", RegexOptions.Compiled);
+        private static Regex TableCellRegex = new Regex(@"\|[^\|]*", RegexOptions.Compiled);
 
         private Table(List<string> columnHeadings = null, List<TableRow> rows = null, int firstLineNumberOneBased = -1)
         {
@@ -165,16 +165,16 @@ namespace MDSDK
             return (tablePerRow, skippedCellsPerRow);
         }
 
-        public static Table GetFirstTable(List<string> fileLines)
+        public static Table GetNextTable(string filename, List<string> fileLines, int lineNumberToStartAtZeroBased = 0)
         {
             Table table = null;
             TableParseState tableParseState = TableParseState.NothingFound;
 
-            int lineNumber = 1;
+            int currentLineNumberOneBased = lineNumberToStartAtZeroBased + 1;
             string currentTableRowString = null;
-            foreach (string eachLine in fileLines)
+            for (int ix = lineNumberToStartAtZeroBased; ix < fileLines.Count; ++ix)
             {
-                string eachLineTrimmed = eachLine.Trim();
+                string eachLineTrimmed = fileLines[ix].Trim();
 
                 switch (tableParseState)
                 {
@@ -183,7 +183,7 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.HeaderColumnHeadingsRowFound;
-                            table = new Table(Table.RowToCells(currentTableRowString), null, lineNumber);
+                            table = new Table(Table.RowToCells(filename, currentTableRowString), null, currentLineNumberOneBased);
                         }
                         break;
                     case TableParseState.HeaderColumnHeadingsRowFound:
@@ -191,16 +191,12 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.HeaderUnderlineRowFound;
-                            if (table.ColumnHeadings.Count != Table.RowToCells(currentTableRowString).Count)
-                            {
-                                ProgramBase.ConsoleWrite("Cell counts in underline row and headings row and underline row don't match.", ConsoleWriteStyle.Error);
-                                throw new MDSDKException();
-                            }
+                            table.ConfirmCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = lineNumber - 1;
+                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.HeaderUnderlineRowFound:
@@ -208,45 +204,54 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.BodyFound;
-                            List<string> rowCells = Table.RowToCells(currentTableRowString);
-                            if (table.ColumnHeadings.Count != rowCells.Count)
-                            {
-                                ProgramBase.ConsoleWrite("Cell counts in body row and header don't match.", ConsoleWriteStyle.Error);
-                                throw new MDSDKException();
-                            }
-                            table.Rows.Add(new TableRow(rowCells));
+                            table.AddRowIfCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = lineNumber - 1;
+                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.BodyFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
                         if (currentTableRowString != null)
                         {
-                            List<string> rowCells = Table.RowToCells(currentTableRowString);
-                            if (table.ColumnHeadings.Count != rowCells.Count)
-                            {
-                                ProgramBase.ConsoleWrite("Cell counts in body row and header don't match.", ConsoleWriteStyle.Error);
-                                throw new MDSDKException();
-                            }
-                            table.Rows.Add(new TableRow(rowCells));
+                            table.AddRowIfCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = lineNumber - 1;
+                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.EndFound:
                         break;
                 }
-                ++lineNumber;
+                ++currentLineNumberOneBased;
             }
 
             return table;
+        }
+
+        private TableRow ConfirmCellCountsMatch(string filename, string currentTableRowString)
+        {
+            List<string> rowCells = Table.RowToCells(filename, currentTableRowString);
+            if (this.ColumnHeadings.Count == rowCells.Count)
+            {
+                return new TableRow(rowCells);
+            }
+            else
+            {
+                ProgramBase.ConsoleWrite($"{Environment.NewLine}Row found with unexpected number of cells.", ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite(filename, ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite(currentTableRowString, ConsoleWriteStyle.Error, 2);
+                throw new MDSDKException();
+            }
+        }
+
+        private void AddRowIfCellCountsMatch(string filename, string currentTableRowString)
+        {
+            this.Rows.Add(ConfirmCellCountsMatch(filename, currentTableRowString));
         }
 
         private static string LineToTableRow(string line)
@@ -258,8 +263,11 @@ namespace MDSDK
                 return null;
         }
 
-        private static List<string> RowToCells(string row)
+        private static List<string> RowToCells(string filename, string row)
         {
+            // Replace \| with &#x007C;.
+            row = row.Replace(@"\|", "&#x007C;");
+
             var cells = new List<string>();
             var cellMatches = Table.TableCellRegex.Matches(row);
 
@@ -269,10 +277,11 @@ namespace MDSDK
                 // If that results in the empty string, then that's the cell contents.
                 string normalizedCell = cellMatches[ix].Value.Substring(1).Trim();
 
-                var twoSpacesMatches = EditorBase.TwoSpacesRegex.Matches(normalizedCell);
-                if (twoSpacesMatches.Count != 0)
+                if (EditorBase.RetrieveMatchesForTwoSpaces(normalizedCell).Count != 0)
                 {
-                    ProgramBase.ConsoleWrite(normalizedCell);
+                    ProgramBase.ConsoleWrite($"{Environment.NewLine}Two spaces found in table cell.", ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite(filename, ConsoleWriteStyle.Warning);
+                    ProgramBase.ConsoleWrite(normalizedCell, ConsoleWriteStyle.Warning, 2);
                 }
 
                 cells.Add(normalizedCell);
