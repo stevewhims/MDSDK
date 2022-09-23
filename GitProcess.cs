@@ -70,7 +70,7 @@ namespace MDSDK
             using (var deletePersonalBranchProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
                 if (deleteRemoteBranch) deletePersonalBranchProcess.StandardInput.WriteLine($"git push origin --delete {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
-                deletePersonalBranchProcess.StandardInput.WriteLine("git checkout master");
+                deletePersonalBranchProcess.StandardInput.WriteLine("git checkout main");
                 deletePersonalBranchProcess.StandardInput.WriteLine($"git branch -D {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
                 deletePersonalBranchProcess.StandardInput.WriteLine("git pull -p");
                 deletePersonalBranchProcess.StandardInput.Close();

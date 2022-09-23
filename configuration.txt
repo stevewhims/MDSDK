@@ -1,16 +1,16 @@
 // Edit this with the path to the folder on your local machine containing your cloned content repos.
-// This is the folder on your local machine that contains (typically) the windows-uwp-pr and winrt-api folders, among others.
+// This is the folder on your local machine that contains (typically) the windows-dev-docs-pr and winrt-api folders, among others.
 // It's ok for the path to contain spaces. Don't put quotes around it, don't escape slashes.
 
-my_content_repos_folder %USERPROFILE%\source\repos
+my_content_repos_folder D:\repos
 
 win32_conceptual_content_repo_name win32-pr
 win32_api_reference_content_repo_name sdk-api
-winrt_conceptual_content_repo_name windows-uwp-pr
+winrt_conceptual_content_repo_name windows-dev-docs-pr
 winrt_api_reference_content_repo_name winrt-api
 winrt_related_content_repo_name winrt-related
 win32_api_reference_build_repo_name sdk-api-build
-windows_sdk_win32_header_files_folder C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um
+windows_sdk_win32_header_files_folder C:\Program Files (x86)\Windows Kits\10\Include\10.0.22613.0\um
 
 // Set live_run to 0 or 1.
 // 0: Means, no, this is not a live run, it's a dry run. So don't create a branch, and don't edit nor save topics.
@@ -18,7 +18,7 @@ windows_sdk_win32_header_files_folder C:\Program Files (x86)\Windows Kits\10\Inc
 
 live_run 0
 content_repo_name win32-pr
-base_branch_name master
+base_branch_name main
 my_alias stwhi
 personal_branch_name refactor-mega-tables-3
 commit_message commit message
