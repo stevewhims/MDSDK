@@ -94,12 +94,25 @@ namespace MDSDKBase
             var matches = EditorBase.DeconstructMarkdownLinkRegex.Matches(markdownLink);
             if (matches.Count == 1)
             {
-                return (matches[0].Groups["link_text"].Value, matches[0].Groups["link_url"].Value);
+                return DeconstructMarkdownLinkRecursive(matches[0].Groups["link_text"].Value, matches[0].Groups["link_url"].Value);
             }
             else
             {
                 ProgramBase.ConsoleWrite($"Markdown link {markdownLink} is malformed.");
                 throw new MDSDKException();
+            }
+        }
+
+        private static (string, string) DeconstructMarkdownLinkRecursive(string interface_link_text, string interface_link_url)
+        {
+            var matches = EditorBase.DeconstructMarkdownLinkRegex.Matches("[" + interface_link_text);
+            if (matches.Count == 1)
+            {
+                return DeconstructMarkdownLinkRecursive(matches[0].Groups["link_text"].Value, matches[0].Groups["link_url"].Value);
+            }
+            else
+            {
+                return (interface_link_text, interface_link_url);
             }
         }
 
