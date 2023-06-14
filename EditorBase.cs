@@ -10,6 +10,12 @@ using System.Xml.Linq;
 
 namespace MDSDKBase
 {
+    internal enum EditorBaseFileInfoExistenceRequirements
+    {
+        FileMustAlreadyExist,
+        FileMustNotAlreadyExist
+    }
+
     /// <summary>
     /// Abstract base class for a markdown file editor, whether the document is a topic, toc, or other.
     /// Provides common query and update services, maintains a dirty flag, and saves the document on
@@ -60,9 +66,22 @@ namespace MDSDKBase
         /// Constructs a new EditorBase.
         /// </summary>
         /// <param name="fileInfo">The file to edit.</param>
-        public EditorBase(FileInfo fileInfo)
+        public EditorBase(FileInfo fileInfo, EditorBaseFileInfoExistenceRequirements fileInfoExistenceRequirements = EditorBaseFileInfoExistenceRequirements.FileMustAlreadyExist)
         {
             this.FileInfo = fileInfo;
+
+            if (fileInfoExistenceRequirements == EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
+            {
+                if (this.FileInfo.Exists)
+                {
+                    ProgramBase.ConsoleWrite(fileInfo.FullName + " already exists.", ConsoleWriteStyle.Error);
+                    throw new MDSDKException();
+                }
+                else
+                {
+                    using (StreamWriter sw = this.FileInfo.CreateText()) { }
+                }
+            }
 
             try
             {
