@@ -36,7 +36,7 @@ namespace MDSDK
 
 		public NamespaceWinRT EnsureNamespaceWinRT(string projectName)
 		{
-			NamespaceWinRT namespaceWinRT = null;
+			NamespaceWinRT? namespaceWinRT = null;
 			foreach (NamespaceWinRT eachNamespaceWinRT in this.NamespaceWinRTs)
 			{
 				if (eachNamespaceWinRT.ProjectName == projectName)
@@ -53,7 +53,7 @@ namespace MDSDK
 			return namespaceWinRT;
 		}
 
-		public string GetProjectNameForNamespace(string namespaceName)
+		public string? GetProjectNameForNamespace(string? namespaceName)
 		{
 			foreach (NamespaceWinRT eachNamespaceWinRT in this.NamespaceWinRTs)
 			{
@@ -65,7 +65,7 @@ namespace MDSDK
 			return null;
 		}
 
-		public bool FindClassWinRTInApiRefModel(string namespaceName, ClassWinRT classWinRT)
+		public bool FindClassWinRTInApiRefModel(string? namespaceName, ClassWinRT classWinRT)
 		{
 			foreach (NamespaceWinRT eachNamespaceWinRT in this.NamespaceWinRTs)
 			{
@@ -79,7 +79,7 @@ namespace MDSDK
 						}
 						else if (eachClassWinRT.InterfacesImplemented != null)
 						{
-							foreach (string eachInterfaceImplemented in eachClassWinRT.InterfacesImplemented)
+							foreach (string? eachInterfaceImplemented in eachClassWinRT.InterfacesImplemented)
 							{
 								if (eachInterfaceImplemented == classWinRT.Name)
 								{
@@ -93,7 +93,7 @@ namespace MDSDK
 			return false;
 		}
 
-		public ClassWinRT GetClassWinRTInApiRefModel(string namespaceName, ClassWinRT classWinRT)
+		public ClassWinRT? GetClassWinRTInApiRefModel(string? namespaceName, ClassWinRT classWinRT)
 		{
 			foreach (NamespaceWinRT eachNamespaceWinRT in this.NamespaceWinRTs)
 			{
@@ -120,11 +120,11 @@ namespace MDSDK
 		public List<ClassWinRT> ClassWinRTs = new List<ClassWinRT>();
 
 		public string Name = string.Empty;
-		public string ProjectName = null;
+		public string? ProjectName;
 
 		public static void ProcessNamespaceWinRT(string projectName, List<Editor> topicEditors, ref ApiRefModel apiRefModel)
 		{
-			string namespaceName = string.Empty;
+			string? namespaceName = string.Empty;
 			// keep a list of the NamespaceWinRTs we create so we can set their name at the end.
 			List<NamespaceWinRT> namespaceWinRTsWeCreated = new List<NamespaceWinRT>();
 
@@ -152,7 +152,7 @@ namespace MDSDK
 
 		private void ProcessOneTopic(TopicType topicType, Editor editor)
 		{
-			ClassWinRT classWinRT = null;
+			ClassWinRT classWinRT;
 			switch (topicType)
 			{
 				case TopicType.AttachedPropertyWinRT:
@@ -192,9 +192,9 @@ namespace MDSDK
 			}
 		}
 
-        public ClassWinRT EnsureClassWinRT(string id, string name, List<string> interfacesImplemented, FileInfo fileInfo, TopicType topicType = TopicType.NotYetKnown, ClassWinRTProvenance classWinRTProvenance = ClassWinRTProvenance.Topic)
+        public ClassWinRT EnsureClassWinRT(string? id, string? name, List<string>? interfacesImplemented, FileInfo? fileInfo, TopicType topicType = TopicType.NotYetKnown, ClassWinRTProvenance classWinRTProvenance = ClassWinRTProvenance.Topic)
 		{
-			ClassWinRT classWinRT = null;
+			ClassWinRT? classWinRT = null;
 			foreach (ClassWinRT eachClassWinRT in this.ClassWinRTs)
 			{
 				if ((id != string.Empty && eachClassWinRT.Id == id) || (name != string.Empty && eachClassWinRT.Name == name))
@@ -235,7 +235,7 @@ namespace MDSDK
 	{
 		public ClassWinRTProvenance ClassWinRTProvenance;
 
-		public ClassWinRT(string id, string name, FileInfo fileInfo, ClassWinRTProvenance classWinRTProvenance)
+		public ClassWinRT(string? id, string? name, FileInfo? fileInfo, ClassWinRTProvenance classWinRTProvenance)
 		{
 			this.Id = id;
 			this.Name = name;
@@ -243,14 +243,14 @@ namespace MDSDK
 			this.ClassWinRTProvenance = classWinRTProvenance;
 		}
 
-		public string Id = string.Empty;
-		public string Name = string.Empty;
+		public string? Id = string.Empty;
+		public string? Name = string.Empty;
 		public TopicType TopicType = TopicType.NotYetKnown;
-		public FileInfo FileInfo;
-		public List<string> InterfacesImplemented;
+		public FileInfo? FileInfo;
+		public List<string>? InterfacesImplemented;
 		public List<MemberWinRT> MemberWinRTs = new List<MemberWinRT>();
 
-		public void AddMember(string id, string name, string intellisense_id_string, TopicType topicType, FileInfo fileInfo)
+		public void AddMember(string? id, string? name, string? intellisense_id_string, TopicType topicType, FileInfo? fileInfo)
 		{
 			MemberWinRT memberWinRT = new MemberWinRT(id, name, intellisense_id_string, topicType, fileInfo);
 			this.MemberWinRTs.Add(memberWinRT);
@@ -264,12 +264,12 @@ namespace MDSDK
 			}
 		}
 
-		public string DisplayName
+		public string? DisplayName
 		{
 			get
 			{
 				// Remove any `<n> generics crap from the end.
-				int startIndexOfWeirdApostrophe = this.Name.IndexOf('`');
+				int startIndexOfWeirdApostrophe = this.Name!.IndexOf('`');
 				if (startIndexOfWeirdApostrophe != -1)
 				{
 					return this.Name.Substring(0, startIndexOfWeirdApostrophe);
@@ -278,7 +278,7 @@ namespace MDSDK
 			}
 		}
 
-		public bool GetMemberWinRTByName(string memberName, ref MemberWinRT foundMemberWinRT)
+		public bool GetMemberWinRTByName(string? memberName, ref MemberWinRT foundMemberWinRT)
 		{
 			foreach (MemberWinRT eachMemberWinRT in this.MemberWinRTs)
 			{
@@ -291,7 +291,7 @@ namespace MDSDK
 			return false;
 		}
 
-		public bool GetMemberWinRTByIntellisenseId(string intellisense_id_string, ref MemberWinRT foundMemberWinRT)
+		public bool GetMemberWinRTByIntellisenseId(string? intellisense_id_string, ref MemberWinRT foundMemberWinRT)
 		{
 			foreach (MemberWinRT eachMemberWinRT in this.MemberWinRTs)
 			{
@@ -310,7 +310,7 @@ namespace MDSDK
 	/// </summary>
 	internal class MemberWinRT
 	{
-		public MemberWinRT(string id, string name, string intellisense_id_string, TopicType topicType, FileInfo fileInfo)
+		public MemberWinRT(string? id, string? name, string? intellisense_id_string, TopicType topicType, FileInfo? fileInfo)
 		{
 			this.Id = id;
 			this.Name = name;
@@ -319,43 +319,43 @@ namespace MDSDK
 			this.FileInfo = fileInfo;
 		}
 
-		public string Id = string.Empty;
-		public string Name = string.Empty;
-		public string IntellisenseId = string.Empty;
+		public string? Id = string.Empty;
+		public string? Name = string.Empty;
+		public string? IntellisenseId = string.Empty;
 		public TopicType TopicType = TopicType.NotYetKnown;
-		public FileInfo FileInfo;
+		public FileInfo? FileInfo;
 	}
 
 	/// <summary>
 	/// Utility class used for sorting NamespaceWinRTs.
 	/// </summary>
-	internal class NamespaceWinRTComparer : Comparer<NamespaceWinRT>
+	internal class NamespaceWinRTComparer : Comparer<NamespaceWinRT?>
 	{
-		public override int Compare(NamespaceWinRT lhs, NamespaceWinRT rhs)
+		public override int Compare(NamespaceWinRT? lhs, NamespaceWinRT? rhs)
 		{
-			return lhs.Name.CompareTo(rhs.Name);
+			return lhs!.Name.CompareTo(rhs!.Name);
 		}
 	}
 
 	/// <summary>
 	/// Utility class used for sorting ClassWinRTs.
 	/// </summary>
-	internal class ClassWinRTComparer : Comparer<ClassWinRT>
+	internal class ClassWinRTComparer : Comparer<ClassWinRT?>
 	{
-		public override int Compare(ClassWinRT lhs, ClassWinRT rhs)
+		public override int Compare(ClassWinRT? lhs, ClassWinRT? rhs)
 		{
-			return lhs.Name.CompareTo(rhs.Name);
+			return lhs!.Name!.CompareTo(rhs!.Name);
 		}
 	}
 
 	/// <summary>
 	/// Utility class used for sorting MemberWinRTs.
 	/// </summary>
-	internal class MemberWinRTComparer : Comparer<MemberWinRT>
+	internal class MemberWinRTComparer : Comparer<MemberWinRT?>
 	{
-		public override int Compare(MemberWinRT lhs, MemberWinRT rhs)
+		public override int Compare(MemberWinRT? lhs, MemberWinRT? rhs)
 		{
-			return lhs.Name.CompareTo(rhs.Name);
+			return lhs!.Name!.CompareTo(rhs!.Name);
 		}
 	}
 
@@ -382,7 +382,7 @@ namespace MDSDK
 
 				using (var exeProcess = Process.Start(info))
 				{
-					exeProcess.StandardInput.WriteLine("sqlcmd " + sqlcmdArgs);
+					exeProcess!.StandardInput.WriteLine("sqlcmd " + sqlcmdArgs);
 					string projectOwnersList = exeProcess.StandardOutput.ReadToEnd();
 					exeProcess.WaitForExit();
 
@@ -390,7 +390,7 @@ namespace MDSDK
 
 					using (StreamReader streamReader = GenerateStreamReaderFromString(projectOwnersList))
 					{
-						string currentLine = null;
+						string? currentLine;
 
 						while (null != (currentLine = streamReader.ReadLine()))
 						{
@@ -407,7 +407,7 @@ namespace MDSDK
 							}
 						}
 					}
-					ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
+					ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo!);
 					ProgramBase.ConsoleWrite("SUCCEEDED.", ConsoleWriteStyle.Success, 2);
 					return mappingsDict;
 				}
@@ -420,7 +420,7 @@ namespace MDSDK
 			}
 		}
 
-		private static StreamReader GenerateStreamReaderFromString(string s)
+		private static StreamReader GenerateStreamReaderFromString(string? s)
 		{
 			MemoryStream stream = new MemoryStream();
 			StreamWriter writer = new StreamWriter(stream);

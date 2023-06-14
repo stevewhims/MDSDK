@@ -27,63 +27,63 @@ namespace MDSDKBase
         /// <summary>
         /// The folder on your local machine containing your cloned content repos. This is read from configuration.txt.
         /// </summary>
-        public static DirectoryInfo MyContentReposFolderDirectoryInfo = null;
+        public static DirectoryInfo? MyContentReposFolderDirectoryInfo;
         /// <summary>
         /// The folder where the api ref topic stubs live on the network. This is read from configuration.txt.
         /// </summary>
-        public static DirectoryInfo ApiRefStubDirectoryInfo = null;
+        public static DirectoryInfo? ApiRefStubDirectoryInfo = null;
         /// <summary>
         /// A string containing the path of the folder from where this exe was loaded.
         /// </summary>
-        public static string ExeFolderPath = null;
+        public static string? ExeFolderPath;
         /// <summary>
         /// A string containing the name of the content repo to target. This is read from configuration.txt.
         /// </summary>
-        public static string ContentRepoName = null;
+        public static string? ContentRepoName;
         /// <summary>
         /// A string containing the name of the Win32 and COM conceptual repo. This is read from configuration.txt.
         /// </summary>
-        public static string Win32ConceptualContentRepoName = null;
+        public static string? Win32ConceptualContentRepoName;
         /// <summary>
         /// A string containing the name of the Win32 and COM API ref repo. This is read from configuration.txt.
         /// </summary>
-        public static string Win32ApiReferenceContentRepoName = null;
+        public static string? Win32ApiReferenceContentRepoName;
         /// <summary>
         /// A string containing the name of the WinRT conceptual repo. This is read from configuration.txt.
         /// </summary>
-        public static string WinRTConceptualContentRepoName = null;
+        public static string? WinRTConceptualContentRepoName;
         /// <summary>
         /// A string containing the name of the WinRT API ref repo. This is read from configuration.txt.
         /// </summary>
-        public static string WinRTApiReferenceContentRepoName = null;
+        public static string? WinRTApiReferenceContentRepoName;
         /// <summary>
         /// A string containing the name of the WinRT-related repo. This is read from configuration.txt.
         /// </summary>
-        public static string WinRTRelatedContentRepoName = null;
+        public static string? WinRTRelatedContentRepoName;
         /// <summary>
         /// A string containing the name of the Win32 and COM API ref build repo. This is read from configuration.txt.
         /// </summary>
-        public static string Win32ApiReferenceBuildRepoName = null;
+        public static string? Win32ApiReferenceBuildRepoName;
         /// <summary>
         /// A string containing the name of the folder containing the Windows SDK Win32 header files. This is read from configuration.txt.
         /// </summary>
-        public static string WindowsSDKWin32HeaderFilesFolderName = null;
+        public static string? WindowsSDKWin32HeaderFilesFolderName;
         /// <summary>
         /// A string containing the name of the branch to base the personal branch on. This is read from configuration.txt.
         /// </summary>
-        public static string BaseBranchName = null;
+        public static string? BaseBranchName;
         /// <summary>
         /// A string containing your alias. This is read from configuration.txt.
         /// </summary>
-        public static string MyAlias = null;
+        public static string? MyAlias;
         /// <summary>
         /// A string containing the name of the personal branch to create. This is read from configuration.txt.
         /// </summary>
-        public static string PersonalBranchName = null;
+        public static string? PersonalBranchName;
         /// <summary>
         /// A string containing the Git commit message for this run. This is read from configuration.txt.
         /// </summary>
-        public static string CommitMessage = null;
+        public static string? CommitMessage;
         /// <summary>
         /// True if this is a live run, otherwise false. A live run creates a branch, and edits/saves files; a dry run does none of those things. This is read from configuration.txt.
         /// </summary>
@@ -147,12 +147,12 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="log">The log to register.</param>
         public void RegisterLog(Log log) { this.Logs.Add(log); }
-        public static Log FilesSavedLog = null;
-        public static Log FileSaveErrorsLog = null;
-        private static Log NonexistentRidsInMappingsLog = null;
-        private static Log DuplicatedMappingsLog = null;
-        private static Log MalformedMappingsLog = null;
-        public static Log DupedWin32ApiNamesLog = null;
+        public static Log? FilesSavedLog;
+        public static Log? FileSaveErrorsLog;
+        private static Log? NonexistentRidsInMappingsLog;
+        private static Log? DuplicatedMappingsLog;
+        private static Log? MalformedMappingsLog;
+        public static Log? DupedWin32ApiNamesLog;
 
         /// <summary>
         /// Construct a new <see cref="Program"/> and call <see cref="ProgramBase.Run"/> on it from your Main method.
@@ -201,9 +201,9 @@ namespace MDSDKBase
             ProgramBase.SetCurrentDirectory(directoryInfo.FullName);
         }
 
-        public static void SetCurrentDirectory(string directoryFullName)
+        public static void SetCurrentDirectory(string? directoryFullName)
         {
-            Directory.SetCurrentDirectory(directoryFullName);
+            Directory.SetCurrentDirectory(directoryFullName!);
             ProgramBase.ConsoleWrite($"Current directory set to {directoryFullName}", ConsoleWriteStyle.Success);
         }
 
@@ -220,18 +220,18 @@ namespace MDSDKBase
 
             using (StreamReader streamReader = fileInfo.OpenText())
             {
-                string currentLine = null;
+                string? currentLine;
 
                 while (null != (currentLine = streamReader.ReadLine()))
                 {
                     currentLine = currentLine.Trim();
                     if (!currentLine.StartsWith("//") && currentLine.Length > 0)
                     {
-                        string value = null;
+                        string? value = null;
 
                         if (this.GetConfigValue(currentLine, ProgramBase.MY_CONTENT_REPOS_FOLDER_CONFIG_KEY, ref value))
                         {
-                            string expandedMyContentReposFolderPath = Environment.ExpandEnvironmentVariables(value);
+                            string? expandedMyContentReposFolderPath = Environment.ExpandEnvironmentVariables(value!);
                             ProgramBase.MyContentReposFolderDirectoryInfo = new DirectoryInfo(expandedMyContentReposFolderPath);
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
@@ -292,27 +292,27 @@ namespace MDSDKBase
                         //}
                         else if (this.GetConfigValue(currentLine, ProgramBase.UWP_PROJ_CONFIG_KEY, ref value))
                         {
-                            ProgramBase.UWPProjects.Add(value);
+                            ProgramBase.UWPProjects.Add(value!);
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.UWP_EXCLUDE_TYPE_CONFIG_KEY, ref value))
                         {
-                            if (!ProgramBase.UWPExcludedTypes.Contains(value))
+                            if (!ProgramBase.UWPExcludedTypes.Contains(value!))
                             {
-                                ProgramBase.UWPExcludedTypes.Add(value);
+                                ProgramBase.UWPExcludedTypes.Add(value!);
                             }
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_PROJ_CONFIG_KEY, ref value))
                         {
-                            if (!ProgramBase.WinRTProjects.Contains(value))
+                            if (!ProgramBase.WinRTProjects.Contains(value!))
                             {
-                                ProgramBase.WinRTProjects.Add(value);
+                                ProgramBase.WinRTProjects.Add(value!);
                             }
                         }
                         else if (this.GetConfigValue(currentLine, ProgramBase.REF_PROJ_PREFIX_CONFIG_KEY, ref value))
                         {
-                            if (!ProgramBase.ReferenceProjectPrefixes.Contains(value))
+                            if (!ProgramBase.ReferenceProjectPrefixes.Contains(value!))
                             {
-                                ProgramBase.ReferenceProjectPrefixes.Add(value);
+                                ProgramBase.ReferenceProjectPrefixes.Add(value!);
                             }
                         }
                     }
@@ -328,7 +328,7 @@ namespace MDSDKBase
             ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
         }
 
-        private bool GetConfigValue(string currentLine, string key, ref string value)
+        private bool GetConfigValue(string currentLine, string key, ref string? value)
         {
             if (currentLine.StartsWith(key))
             {
@@ -344,7 +344,7 @@ namespace MDSDKBase
         /// <param name="fileName">The name of the file to load from your Output Folder. Add the file to your project as Content/Copy if newer.</param>
         /// <param name="listToAddTo">Optional list of strings to add to.</param>
         /// <param name="notFoundMessage">Optional message to override the default file-not-found message.</param>
-        public static void LoadTextFileIntoStringList(string fileName, ref List<string> listToAddTo, string notFoundMessage = null)
+        public static void LoadTextFileIntoStringList(string fileName, ref List<string> listToAddTo, string? notFoundMessage = null)
         {
             if (listToAddTo == null) listToAddTo = new List<string>();
 
@@ -359,7 +359,7 @@ namespace MDSDKBase
             {
                 while (!streamReader.EndOfStream)
                 {
-                    listToAddTo.Add(streamReader.ReadLine());
+                    listToAddTo.Add(streamReader.ReadLine()!);
                 }
             }
         }
@@ -394,7 +394,7 @@ namespace MDSDKBase
 
             using (StreamReader streamReader = fileInfo.OpenText())
             {
-                string currentLine = null;
+                string? currentLine = null;
 
                 while (null != (currentLine = streamReader.ReadLine()))
                 {
@@ -412,14 +412,14 @@ namespace MDSDKBase
                             // If this is the third+ time we've seen this key...
                             if (Program.DuplicateMapKeys.Contains(values[0]))
                             {
-                                Program.DuplicatedMappingsLog.Add(fileName + " has duplicate key: " + currentLine);
+                                Program.DuplicatedMappingsLog!.Add(fileName + " has duplicate key: " + currentLine);
                                 continue;
                             }
                             // If this is the second time we've seen this key...
                             if (mappingsDict.ContainsKey(values[0]))
                             {
-                                Program.DuplicatedMappingsLog.Add(fileName + " has duplicate key: " + values[0] + "," + mappingsDict[values[0]]);
-                                Program.DuplicatedMappingsLog.Add(fileName + " has duplicate key: " + currentLine);
+                                Program.DuplicatedMappingsLog!.Add(fileName + " has duplicate key: " + values[0] + "," + mappingsDict[values[0]]);
+                                Program.DuplicatedMappingsLog!.Add(fileName + " has duplicate key: " + currentLine);
                                 mappingsDict.Remove(values[0]);
                                 Program.DuplicateMapKeys.Add(values[0]);
                                 continue;
@@ -428,24 +428,24 @@ namespace MDSDKBase
                             {
                                 if (docSetsToValidateAgainst[0].GetFileInfoForTopic(values[0]) == null)
                                 {
-                                    ProgramBase.NonexistentRidsInMappingsLog.Add(docSetsToValidateAgainst[0].Description + " don't contain " + values[0]);
+                                    ProgramBase.NonexistentRidsInMappingsLog!.Add(docSetsToValidateAgainst[0].Description + " don't contain " + values[0]);
                                 }
                                 if (docSetsToValidateAgainst[1].GetFileInfoForTopic(values[1]) == null)
                                 {
-                                    ProgramBase.NonexistentRidsInMappingsLog.Add(docSetsToValidateAgainst[1].Description + " don't contain " + values[1]);
+                                    ProgramBase.NonexistentRidsInMappingsLog!.Add(docSetsToValidateAgainst[1].Description + " don't contain " + values[1]);
                                 }
                             }
                             mappingsDict[values[0]] = values[1];
                         }
                         else
                         {
-                            ProgramBase.MalformedMappingsLog.Add(fileName + " has malformed mapping: " + currentLine);
+                            ProgramBase.MalformedMappingsLog!.Add(fileName + " has malformed mapping: " + currentLine);
                         }
                     }
                 }
             }
 
-            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
+            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo!);
 
             return mappingsDict;
         }
@@ -472,7 +472,7 @@ namespace MDSDKBase
 
             using (StreamReader streamReader = fileInfo.OpenText())
             {
-                string currentLine = null;
+                string? currentLine = null;
 
                 while (null != (currentLine = streamReader.ReadLine()))
                 {
@@ -498,13 +498,13 @@ namespace MDSDKBase
                         }
                         else
                         {
-                            ProgramBase.MalformedMappingsLog.Add(fileName + " has malformed mapping: " + currentLine);
+                            ProgramBase.MalformedMappingsLog!.Add(fileName + " has malformed mapping: " + currentLine);
                         }
                     }
                 }
             }
 
-            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
+            ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo!);
 
             return mappingsDict;
         }
@@ -518,7 +518,7 @@ namespace MDSDKBase
         {
             List<FileInfo> fileInfos = new List<FileInfo>();
 
-            foreach (DirectoryInfo eachDirectoryInfo in ProgramBase.ApiRefStubDirectoryInfo.GetDirectories(searchPattern, SearchOption.TopDirectoryOnly).ToList())
+            foreach (DirectoryInfo eachDirectoryInfo in ProgramBase.ApiRefStubDirectoryInfo!.GetDirectories(searchPattern, SearchOption.TopDirectoryOnly).ToList())
             {
                 if (Directory.Exists(Path.Combine(eachDirectoryInfo.FullName, eachDirectoryInfo.Name)))
                 {
@@ -555,13 +555,13 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="id">The topic id to search for.</param>
         /// <returns>A FileInfo.</returns>
-        public FileInfo GetFileInfoForTopicStub(string id)
+        public FileInfo? GetFileInfoForTopicStub(string id)
         {
             string[] segments = id.Split('.');
             if (segments == null || segments.Length != 2) return null;
 
             string project = segments[0];
-            List<DirectoryInfo> directoryInfos = ProgramBase.ApiRefStubDirectoryInfo.GetDirectories(project, SearchOption.TopDirectoryOnly).ToList();
+            List<DirectoryInfo> directoryInfos = ProgramBase.ApiRefStubDirectoryInfo!.GetDirectories(project, SearchOption.TopDirectoryOnly).ToList();
             if (directoryInfos.Count != 1) return null;
             DirectoryInfo directoryInfo = directoryInfos[0];
 
@@ -585,9 +585,9 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="id">The topic id to search for.</param>
         /// <returns>An Editor.</returns>
-        public Editor GetEditorForTopicStub(string id)
+        public Editor? GetEditorForTopicStub(string id)
         {
-            FileInfo fileInfo = this.GetFileInfoForTopicStub(id);
+            FileInfo? fileInfo = this.GetFileInfoForTopicStub(id);
             if (fileInfo != null)
             {
                 return new Editor(fileInfo);
@@ -619,7 +619,7 @@ namespace MDSDKBase
 
         private void OutputFilesSavedLog()
         {
-            ProgramBase.DeleteFileIfExists(ProgramBase.FilesSavedLog.Filename);
+            ProgramBase.DeleteFileIfExists(ProgramBase.FilesSavedLog!.Filename);
 
             if (ProgramBase.LiveRun)
             {
@@ -650,7 +650,7 @@ namespace MDSDKBase
             {
                 ProgramBase.ConsoleWrite("For the rest, see " + ProgramBase.FilesSavedLog.Filename);
 
-                using (StreamWriter streamWriter = File.CreateText(ProgramBase.FilesSavedLog.Filename))
+                using (StreamWriter streamWriter = File.CreateText(ProgramBase.FilesSavedLog.Filename!))
                 {
                     foreach (string eachLine in ProgramBase.FilesSavedLog)
                     {
@@ -659,7 +659,7 @@ namespace MDSDKBase
                 }
             }
 
-            if (this.OutputOtherLog(ProgramBase.FileSaveErrorsLog))
+            if (this.OutputOtherLog(ProgramBase.FileSaveErrorsLog!))
             {
                 if (ProgramBase.LiveRun)
                 {
@@ -700,11 +700,11 @@ namespace MDSDKBase
                 didWeWriteAnyOtherLogsThisCall = this.didWeWriteAnyOtherLogs = true;
                 ProgramBase.ConsoleWrite("See " + log.Filename, log.AnnouncementStyle);
 
-                using (StreamWriter streamWriter = File.CreateText(log.Filename))
+                using (StreamWriter streamWriter = File.CreateText(log.Filename!))
                 {
                     if (log.Headers != null)
                     {
-                        streamWriter.WriteLine(string.Format(log.FormatString, log.Headers));
+                        streamWriter.WriteLine(string.Format(log.FormatString!, log.Headers));
                     }
                     else
                     {
@@ -720,7 +720,7 @@ namespace MDSDKBase
             return didWeWriteAnyOtherLogsThisCall;
         }
 
-        private static void DeleteFileIfExists(string path)
+        private static void DeleteFileIfExists(string? path)
         {
             try
             {
@@ -743,7 +743,7 @@ namespace MDSDKBase
     /// </summary>
     internal class ChangeAndRestoreCurrentDirectory : IDisposable
     {
-        private string pushedCurrentDirectory = null;
+        private string? pushedCurrentDirectory = null;
 
         public ChangeAndRestoreCurrentDirectory(DirectoryInfo directoryInfo) : this(directoryInfo.FullName) { }
 
@@ -775,7 +775,7 @@ namespace MDSDKBase
         public DocSetType DocSetType;
         public Platform Platform;
         public string Description;
-        private ApiRefModel apiRefModel = null;
+        private ApiRefModel? apiRefModel;
 
         /// <summary>
         /// Constructs and returns a DocSet to the given specification.
@@ -789,7 +789,7 @@ namespace MDSDKBase
             ProgramBase.ConsoleWrite("Creating docset: \"" + description + "\"", ConsoleWriteStyle.Success);
             DocSet docSet = new DocSet(docSetType, platform, description);
 
-            List<string> metroAndWindevDotTxt = null;
+            List<string>? metroAndWindevDotTxt = null;
 
             //ProgramBase.LoadTextFileIntoStringList("metro.txt", ref metroAndWindevDotTxt, "MISSING metro.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
             //ProgramBase.LoadTextFileIntoStringList("windev.txt", ref metroAndWindevDotTxt, "MISSING windev.txt. This file could not be found in your enlistment folder path. Your configuration.txt contains something like: my_content_repos_folder D:\\Source_Depot\\devdocmain. This should be the folder that contains the dev_*, m_*, w_* folders, BuildX, metro.txt, etc.");
@@ -805,14 +805,14 @@ namespace MDSDKBase
             {
                 foreach (string eachProjectName in ProgramBase.UWPProjects)
                 {
-                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
+                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo!.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
                 }
             }
             else
             {
                 foreach (string eachProjectName in ProgramBase.WinRTProjects)
                 {
-                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
+                    docSet.ProjectDirectoryInfos.AddRange(ProgramBase.MyContentReposFolderDirectoryInfo!.GetDirectories(eachProjectName, SearchOption.TopDirectoryOnly).ToList());
                 }
             }
 
@@ -836,7 +836,7 @@ namespace MDSDKBase
             List<DirectoryInfo> projectsToRemove = new List<DirectoryInfo>();
             foreach (DirectoryInfo eachDirectoryInfo in docSet.ProjectDirectoryInfos)
             {
-                if (!metroAndWindevDotTxt.Contains(eachDirectoryInfo.Name))
+                if (!metroAndWindevDotTxt!.Contains(eachDirectoryInfo.Name))
                 {
                     projectsToRemove.Add(eachDirectoryInfo);
                 }
@@ -873,7 +873,7 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="projectName">The name of the project to find an exact match for.</param>
         /// <returns>A DirectoryInfo.</returns>
-        public DirectoryInfo FindForProjectName(string projectName)
+        public DirectoryInfo? FindForProjectName(string projectName)
         {
             return this.ProjectDirectoryInfos.Find(directoryInfo => directoryInfo.Name == projectName);
         }
@@ -898,7 +898,7 @@ namespace MDSDKBase
         /// <param name="projectNameIsAPrefix">True if the project name is actually a prefix, otherwise false. Default is false. Note, a prefix is not a search pattern.</param>
         /// <param name="getAllFilesInFolderIgnoringXtoc">True if you want to return all files in the project folder, false if you just want unfiltered files in the xtoc. Default is false.</param>
         /// <returns>A list of FileInfo.</returns>
-        public List<FileInfo> GetFileInfosForTopicsInProject(string projectName = null, bool projectNameIsAPrefix = false, bool getAllFilesInFolderIgnoringXtoc = false)
+        public List<FileInfo> GetFileInfosForTopicsInProject(string? projectName = null, bool projectNameIsAPrefix = false, bool getAllFilesInFolderIgnoringXtoc = false)
         {
             List<FileInfo> fileInfos = new List<FileInfo>();
             foreach (DirectoryInfo eachProjectDirectoryInfo in this.ProjectDirectoryInfos)
@@ -940,7 +940,7 @@ namespace MDSDKBase
         /// <param name="projectNameIsAPrefix">True if the project name is actually a prefix, otherwise false. Note, a prefix is not a search pattern.</param>
         /// <param name="getAllFilesInFolderIgnoringXtoc">True if you want to return all files in the project folder, false if you just want unfiltered files in the xtoc. Defaults to false.</param>
         /// <returns>A list of Editor.</returns>
-        public List<Editor> GetEditorsForTopicsInProject(string projectName = null, bool projectNameIsAPrefix = false, bool getAllFilesInFolderIgnoringXtoc = false)
+        public List<Editor> GetEditorsForTopicsInProject(string? projectName = null, bool projectNameIsAPrefix = false, bool getAllFilesInFolderIgnoringXtoc = false)
         {
             List<FileInfo> fileInfos = this.GetFileInfosForTopicsInProject(projectName, projectNameIsAPrefix, getAllFilesInFolderIgnoringXtoc);
 
@@ -957,7 +957,7 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="id">The id of the topic to get.</param>
         /// <returns>A FileInfo.</returns>
-        public FileInfo GetFileInfoForTopic(string id)
+        public FileInfo? GetFileInfoForTopic(string id)
         {
             string[] segments = id.Split('.');
             if (segments == null || segments.Length != 2)
@@ -965,7 +965,7 @@ namespace MDSDKBase
                 return null;
             }
 
-            DirectoryInfo directoryInfo = this.FindForProjectName(segments[0]);
+            DirectoryInfo? directoryInfo = this.FindForProjectName(segments[0]);
             if (directoryInfo == null)
             {
                 directoryInfo = this.FindForProjectName("modern_nodes");
@@ -999,9 +999,9 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="id">The id of the topic to get.</param>
         /// <returns>An Editor.</returns>
-        public Editor GetEditorForTopic(string id)
+        public Editor? GetEditorForTopic(string id)
         {
-            FileInfo fileInfo = this.GetFileInfoForTopic(id);
+            FileInfo? fileInfo = this.GetFileInfoForTopic(id);
             if (fileInfo != null)
             {
                 return new Editor(fileInfo);
@@ -1141,11 +1141,11 @@ namespace MDSDKBase
         /// <summary>
         /// A label that <see cref="ProgramBase"/> writes at the start of the log (unless the log has headers).
         /// </summary>
-        public string Label;
+        public string? Label = null;
         /// <summary>
         /// The filename to use. Make this as descriptive as possible, especially for logs with headers.
         /// </summary>
-        public string Filename;
+        public string? Filename = null;
         /// <summary>
         /// The style with which <see cref="ProgramBase"/> should announce the log at the end
         /// of the run. Set this to something conspicuous, or otherwise, as appropriate.
@@ -1156,7 +1156,7 @@ namespace MDSDKBase
         /// to the log, include as many delimited values per entry as there are headers. This will make the
         /// log easy to open and view in Excel.
         /// </summary>
-        public string[] Headers = null;
+        public string[]? Headers = null;
         /// <summary>
         /// Only applies if the log has headers. Use a delimiter value that's not likely to occur within the
         /// delimited values.
@@ -1165,7 +1165,7 @@ namespace MDSDKBase
         /// <summary>
         /// When you add an entry to the log, you can use this format string to format values into an entry.
         /// </summary>
-        public string FormatString
+        public string? FormatString
         {
             get
             {
@@ -1199,7 +1199,7 @@ namespace MDSDKBase
             {
                 try
                 {
-                    this.Add(string.Format(this.FormatString, args));
+                    this.Add(string.Format(this.FormatString!, args));
                 }
                 catch (FormatException ex)
                 {
@@ -1216,7 +1216,7 @@ namespace MDSDKBase
                     ProgramBase.ConsoleWrite("You called Log.AddEntry but didn't provide exactly one value.", ConsoleWriteStyle.Error);
                     throw new MDSDKException();
                 }
-                this.Add(args[0].ToString());
+                this.Add(args[0].ToString()!);
             }
         }
     }

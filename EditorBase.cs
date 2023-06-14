@@ -21,11 +21,11 @@ namespace MDSDKBase
         /// <summary>
         /// The underlying FileInfo object representing the document on disk.
         /// </summary>
-        public FileInfo FileInfo = null;
+        public FileInfo? FileInfo = null;
         /// <summary>
         /// The string object representing the entire file contents.
         /// </summary>
-        protected string fileContents = null;
+        protected string? fileContents = null;
         /// <summary>
         /// A string collection representing each line of the file.
         /// </summary>
@@ -33,7 +33,7 @@ namespace MDSDKBase
         /// <summary>
         /// The XDocument object representing the xml document.
         /// </summary>
-        protected XDocument xDocument = null;
+        protected XDocument? xDocument = null;
         /// <summary>
         /// Represents whether the document is dirty (has unsaved changes) or not. Calling
         /// <see cref="EditorBase.CheckOutAndSaveChangesIfDirty"/> only has an effect if
@@ -66,15 +66,15 @@ namespace MDSDKBase
 
             try
             {
-                using (StreamReader streamReader = this.FileInfo.OpenText())
+                using (StreamReader? streamReader = this.FileInfo.OpenText())
                 {
                     this.fileContents = streamReader.ReadToEnd();
                 }
-                using (StreamReader streamReader = this.FileInfo.OpenText())
+                using (StreamReader? streamReader = this.FileInfo.OpenText())
                 {
                     while (!streamReader.EndOfStream)
                     {
-                        this.fileLines.Add(streamReader.ReadLine().TrimEnd());
+                        this.fileLines.Add(streamReader.ReadLine()!.TrimEnd());
                     }
                 }
             }
@@ -127,7 +127,7 @@ namespace MDSDKBase
         /// <param name="name">The element's name (without namespace).</param>
         /// <param name="container">The scope to search in. Uses the entire document by default but you can pass another XElement to limit the seach to that element's descendants.</param>
         /// <returns>The element, or null if the element does not exist.</returns>
-        public XElement GetUniqueDescendant(string name, XContainer container = null)
+        public XElement? GetUniqueDescendant(string? name, XContainer? container = null)
         {
             if (container == null) container = this.xDocument;
             List<XElement> elements = this.GetDescendants(name, container);
@@ -149,7 +149,7 @@ namespace MDSDKBase
         /// <param name="name">The element's name (without namespace).</param>
         /// <param name="container">The scope to search in. Uses the entire document by default but you can pass another XElement to limit the seach to that element's descendants.</param>
         /// <returns>The element, or null if the element does not exist.</returns>
-        public XElement GetFirstDescendant(string name, XContainer container = null)
+        public XElement? GetFirstDescendant(string? name, XContainer? container = null)
         {
             if (container == null) container = this.xDocument;
             List<XElement> elements = this.GetDescendants(name, container);
@@ -163,105 +163,105 @@ namespace MDSDKBase
             }
         }
 
-        public Table GetFunctionsInIndexMd()
+        public Table? GetFunctionsInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdFunctionsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetEnumerationsInIndexMd()
+        public Table? GetEnumerationsInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdEnumerationsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetStructuresInIndexMd()
+        public Table? GetStructuresInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdStructuresH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetInterfacesInIndexMd()
+        public Table? GetInterfacesInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdInterfacesH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetCallbackFunctionsInIndexMd()
+        public Table? GetCallbackFunctionsInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdCallbackFunctionsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetClassesInIndexMd()
+        public Table? GetClassesInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdClassesH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetIoctlsInIndexMd()
+        public Table? GetIoctlsInIndexMd()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdIoctlsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
         }
 
-        public Table GetMethodsInInterfaceTopic()
+        public Table? GetMethodsInInterfaceTopic()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.InterfaceTopicMethodsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo.FullName, this.fileLines, ix + 1);
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
                 }
             }
             return null;
@@ -284,7 +284,7 @@ namespace MDSDKBase
             return -1;
         }
 
-        public string GetFirstNoBreakSpaceLine()
+        public string? GetFirstNoBreakSpaceLine()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
@@ -298,7 +298,7 @@ namespace MDSDKBase
             return null;
         }
 
-        public string GetFirstAsteriskInYamlDescriptionLine()
+        public string? GetFirstAsteriskInYamlDescriptionLine()
         {
             for (int ix = 0; ix < this.fileLines.Count; ++ix)
             {
@@ -318,16 +318,16 @@ namespace MDSDKBase
         /// <param name="name">The element's name (without namespace) or null to return all descendants.</param>
         /// <param name="container">The scope to search in. Uses the entire document by default but you can pass another XElement to limit the seach to that element's descendants.</param>
         /// <returns>The elements, or null if the element does not exist.</returns>
-        public List<XElement> GetDescendants(string name = null, XContainer container = null)
+        public List<XElement> GetDescendants(string? name = null, XContainer? container = null)
         {
             if (container == null) container = this.xDocument;
             if (name == null)
             {
-                return container.Descendants().ToList();
+                return container!.Descendants().ToList();
             }
             else
             {
-                return container.Descendants(name).ToList();
+                return container!.Descendants(name).ToList();
             }
         }
 
@@ -335,12 +335,12 @@ namespace MDSDKBase
         /// Gets metadata@id as a string.
         /// </summary>
         /// <returns>The value of the id attribute if found, otherwise null.</returns>
-        public string GetMetadataAtId()
+        public string? GetMetadataAtId()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute id = metadata.Attribute("id");
+                XAttribute? id = metadata.Attribute("id");
                 if (id != null) return id.Value;
             }
             return null;
@@ -350,12 +350,12 @@ namespace MDSDKBase
         /// Gets metadata@type as a string.
         /// </summary>
         /// <returns>The value of the type attribute if found, otherwise null.</returns>
-        public string GetMetadataAtTypeAsString()
+        public string? GetMetadataAtTypeAsString()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute type = metadata.Attribute("type");
+                XAttribute? type = metadata.Attribute("type");
                 if (type != null) return type.Value;
             }
             return null;
@@ -367,10 +367,10 @@ namespace MDSDKBase
         /// <returns>An enum value representing the value of the type attribute.</returns>
         public TopicType GetMetadataAtTypeAsEnum()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute xAttribute = metadata.Attribute("type");
+                XAttribute? xAttribute = metadata.Attribute("type");
                 if (xAttribute != null)
                 {
                     if (xAttribute.Value == "attachedmember_winrt")
@@ -471,18 +471,18 @@ namespace MDSDKBase
         /// Gets metadata@title as a string.
         /// </summary>
         /// <returns>The value of the title attribute if found, otherwise null.</returns>
-        public string GetMetadataAtTitle()
+        public string? GetMetadataAtTitle()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XElement title = this.GetUniqueDescendant("title", metadata);
+                XElement? title = this.GetUniqueDescendant("title", metadata);
                 if (title != null) return title.Value;
             }
             return null;
         }
 
-        public string GetYamlApiName()
+        public string? GetYamlApiName()
         {
             return "ACTRL_ACCESSA";
             //XElement metadata = this.GetUniqueDescendant("metadata");
@@ -501,34 +501,34 @@ namespace MDSDKBase
         /// Gets metadata@title as nodes.
         /// </summary>
         /// <returns>The nodes of the title attribute if found, otherwise null.</returns>
-        public IEnumerable<XNode> GetMetadataAtTitleAsNodes()
+        public IEnumerable<XNode>? GetMetadataAtTitleAsNodes()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XElement title = this.GetUniqueDescendant("title", metadata);
+                XElement? title = this.GetUniqueDescendant("title", metadata);
                 if (title != null) return title.Nodes();
             }
             return null;
         }
 
-        public string GetSyntaxName()
+        public string? GetSyntaxName()
         {
-            XElement syntax = this.GetUniqueDescendant("syntax");
+            XElement? syntax = this.GetUniqueDescendant("syntax");
             if (syntax != null)
             {
-                XElement name = this.GetFirstDescendant("name", syntax);
+                XElement? name = this.GetFirstDescendant("name", syntax);
                 if (name != null) return name.Value;
             }
             return null;
         }
 
-        public string GetMetadataAtIntellisenseIdString()
+        public string? GetMetadataAtIntellisenseIdString()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute intellisenseIdStringAttribute = metadata.Attribute("intellisense_id_string");
+                XAttribute? intellisenseIdStringAttribute = metadata.Attribute("intellisense_id_string");
                 if (intellisenseIdStringAttribute != null)
                 {
                     return intellisenseIdStringAttribute.Value;
@@ -541,9 +541,9 @@ namespace MDSDKBase
         /// Gets the type name extracted from metadata@intellisense_id_string as a string.
         /// </summary>
         /// <returns>The type name extracted from the intellisense_id_string attribute if found, otherwise null.</returns>
-        public string GetTypeNameFromMetadataAtIntellisenseIdString()
+        public string? GetTypeNameFromMetadataAtIntellisenseIdString()
         {
-            string intellisenseIdString = this.GetMetadataAtIntellisenseIdString();
+            string? intellisenseIdString = this.GetMetadataAtIntellisenseIdString();
             if (intellisenseIdString != null)
             {
                 string typeName = intellisenseIdString;
@@ -555,18 +555,18 @@ namespace MDSDKBase
             return null;
         }
 
-        public string GetMethodWinRTParametersFromParams()
+        public string? GetMethodWinRTParametersFromParams()
         {
             string parmsList = string.Empty;
-            XElement paramsEl = this.GetUniqueDescendant("params");
+            XElement? paramsEl = this.GetUniqueDescendant("params");
             if (paramsEl != null)
             {
                 foreach (XElement param in this.GetDescendants("param", paramsEl))
                 {
                     if (parmsList.Length == 0) parmsList = "(";
-                    XElement datatype = this.GetUniqueDescendant("datatype", param);
+                    XElement? datatype = this.GetUniqueDescendant("datatype", param);
                     if (datatype == null) continue;
-                    XElement xref = this.GetUniqueDescendant("xref", datatype);
+                    XElement? xref = this.GetUniqueDescendant("xref", datatype);
                     if (xref == null) continue;
 
                     if (parmsList.Length > 1) parmsList += ", ";
@@ -581,12 +581,12 @@ namespace MDSDKBase
         /// Gets applicationplatform@name as a string.
         /// </summary>
         /// <returns>The value of the name attribute if found, otherwise null.</returns>
-        public string GetApplicationPlatformAtName()
+        public string? GetApplicationPlatformAtName()
         {
-            XElement applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
+            XElement? applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
             if (applicationPlatform != null)
             {
-                XAttribute name = applicationPlatform.Attribute("name");
+                XAttribute? name = applicationPlatform.Attribute("name");
                 if (name != null) return name.Value;
             }
             return null;
@@ -596,12 +596,12 @@ namespace MDSDKBase
         /// Gets applicationplatform@friendlyname as a string.
         /// </summary>
         /// <returns>The value of the friendlyname attribute if found, otherwise null.</returns>
-        public string GetApplicationPlatformAtFriendlyName()
+        public string? GetApplicationPlatformAtFriendlyName()
         {
-            XElement applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
+            XElement? applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
             if (applicationPlatform != null)
             {
-                XAttribute friendlyName = applicationPlatform.Attribute("friendlyName");
+                XAttribute? friendlyName = applicationPlatform.Attribute("friendlyName");
                 if (friendlyName != null) return friendlyName.Value;
             }
             return null;
@@ -611,12 +611,12 @@ namespace MDSDKBase
         /// Gets applicationplatform@version as a string.
         /// </summary>
         /// <returns>The value of the friendlyname attribute if found, otherwise null.</returns>
-        public string GetApplicationPlatformAtVersion()
+        public string? GetApplicationPlatformAtVersion()
         {
-            XElement applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
+            XElement? applicationPlatform = this.GetUniqueDescendant("ApplicationPlatform");
             if (applicationPlatform != null)
             {
-                XAttribute version = applicationPlatform.Attribute("version");
+                XAttribute? version = applicationPlatform.Attribute("version");
                 if (version != null) return version.Value;
             }
             return null;
@@ -626,19 +626,19 @@ namespace MDSDKBase
         /// Gets the xref element inside either applies@class or applies@iface as a string.
         /// </summary>
         /// <returns>The xref element if found, otherwise null.</returns>
-        public string GetAppliesClassOrIfaceXrefAtRid()
+        public string? GetAppliesClassOrIfaceXrefAtRid()
         {
-            XElement applies = this.GetUniqueDescendant("applies");
+            XElement? applies = this.GetUniqueDescendant("applies");
             if (applies != null)
             {
-                XElement classEl = this.GetUniqueDescendant("class", applies);
+                XElement? classEl = this.GetUniqueDescendant("class", applies);
                 if (classEl != null)
                 {
                     return this.GetAtRidForUniqueXrefDescendant(classEl);
                 }
                 else
                 {
-                    XElement iface = this.GetUniqueDescendant("iface", applies);
+                    XElement? iface = this.GetUniqueDescendant("iface", applies);
                     if (iface != null)
                     {
                         return this.GetAtRidForUniqueXrefDescendant(iface);
@@ -653,12 +653,12 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="xElement">The element whose xref descendant to find.</param>
         /// <returns>The value of the rid attribute if found, otherwise null.</returns>
-        public string GetAtRidForUniqueXrefDescendant(XElement xElement)
+        public string? GetAtRidForUniqueXrefDescendant(XElement? xElement)
         {
-            XElement xref = this.GetUniqueDescendant("xref", xElement);
+            XElement? xref = this.GetUniqueDescendant("xref", xElement);
             if (xref != null)
             {
-                XAttribute rid = xref.Attribute("rid");
+                XAttribute? rid = xref.Attribute("rid");
                 if (rid != null) return rid.Value;
             }
 
@@ -672,14 +672,14 @@ namespace MDSDKBase
         /// <param name="caseSensitive">True if the comparison should be case-sensitive, otherwise false.</param>
         /// <param name="container">The scope to search in. Uses the entire document by default but you can pass another XElement to limit the seach to that element's descendants.</param>
         /// <returns>A list of matching xref elements.</returns>
-        public List<XElement> GetXrefsWhereAtHlinkContains(string substring, bool caseSensitive = false, XContainer container = null)
+        public List<XElement> GetXrefsWhereAtHlinkContains(string substring, bool caseSensitive = false, XContainer? container = null)
         {
             if (container == null) container = this.xDocument;
             if (!caseSensitive) substring = substring.ToLower();
             List<XElement> xrefsWhereAtHlinkContains = new List<XElement>();
             foreach (XElement eachXref in this.GetDescendants("xref", container))
             {
-                XAttribute hlink = eachXref.Attribute("hlink");
+                XAttribute? hlink = eachXref.Attribute("hlink");
                 if (hlink != null)
                 {
                     string hlinkValue = hlink.Value;
@@ -690,14 +690,14 @@ namespace MDSDKBase
             return xrefsWhereAtHlinkContains;
         }
 
-        public List<XElement> GetXrefsForRid(string ridString, bool caseSensitive = false, XContainer container = null)
+        public List<XElement> GetXrefsForRid(string ridString, bool caseSensitive = false, XContainer? container = null)
         {
             if (container == null) container = this.xDocument;
             if (!caseSensitive) ridString = ridString.ToLower();
             List<XElement> xrefsForRid = new List<XElement>();
             foreach (XElement eachXref in this.GetDescendants("xref", container))
             {
-                XAttribute ridAttribute = eachXref.Attribute("rid");
+                XAttribute? ridAttribute = eachXref.Attribute("rid");
                 if (ridAttribute != null)
                 {
                     string ridValue = ridAttribute.Value;
@@ -715,7 +715,7 @@ namespace MDSDKBase
         /// <param name="directoryInfo">The folder containing the file.</param>
         /// <param name="fileName">The name of the file for which to retrieve an editor.</param>
         /// <returns>An Editor object for the file in the folder.</returns>
-        public static Editor GetEditorForTopicFileName(DirectoryInfo directoryInfo, string fileName, bool throwIfNotFound = true)
+        public static Editor? GetEditorForTopicFileName(DirectoryInfo directoryInfo, string fileName, bool throwIfNotFound = true)
         {
             List<FileInfo> fileInfos = directoryInfo.GetFiles(fileName).ToList();
             if (fileInfos.Count == 1)
@@ -784,11 +784,11 @@ namespace MDSDKBase
             List<XElement> nodes = xtocEditor.GetDescendants("node");
             foreach (XElement eachNode in nodes)
             {
-                XAttribute topicUrlAttribute = eachNode.Attribute("topicURL");
+                XAttribute? topicUrlAttribute = eachNode.Attribute("topicURL");
                 if (topicUrlAttribute != null && EditorBase.IsTopicPublishedToMsdn(eachNode))
                 {
                     //string topicFilename = topicUrlAttribute.Value.Substring(topicUrlAttribute.Value.IndexOf('/') + 1);
-                    FileInfo fileInfo = new FileInfo(Path.Combine(projectDirectoryInfo.FullName, topicUrlAttribute.Value));
+                    FileInfo? fileInfo = new FileInfo(Path.Combine(projectDirectoryInfo.FullName, topicUrlAttribute.Value));
                     if (fileInfo != null)
                     {
                         topicFileInfos.Add(fileInfo);
@@ -799,14 +799,14 @@ namespace MDSDKBase
             List<XElement> includes = xtocEditor.GetDescendants("include");
             foreach (XElement eachInclude in includes)
             {
-                XAttribute urlAttribute = eachInclude.Attribute("url");
+                XAttribute? urlAttribute = eachInclude.Attribute("url");
                 if (urlAttribute != null && EditorBase.IsTopicPublishedToMsdn(eachInclude))
                 {
                     //string topicFilename = urlAttribute.Value.Substring(urlAttribute.Value.IndexOf('/') + 1);
-                    FileInfo fileInfo = new FileInfo(Path.Combine(projectDirectoryInfo.FullName, urlAttribute.Value));
+                    FileInfo? fileInfo = new FileInfo(Path.Combine(projectDirectoryInfo.FullName, urlAttribute.Value));
                     if (fileInfo != null)
                     {
-                        Editor includedXtocEditor = new Editor(fileInfo);
+                        Editor? includedXtocEditor = new Editor(fileInfo);
                         topicFileInfos.AddRange(EditorBase.GetFileInfosForTopicsInXtoc(projectDirectoryInfo, includedXtocEditor));
                     }
                 }
@@ -821,12 +821,12 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="topicUrl">The url (or filename) of the topic in the form of an xtoc node@topicURL value.</param>
         /// <returns>True if the topic is present in the xtoc and published to msdn, otherwise false.</returns>
-        public bool IsTopicUrlInXtocAndPublishedToMsdn(string topicUrl)
+        public bool IsTopicUrlInXtocAndPublishedToMsdn(string? topicUrl)
         {
             List<XElement> nodes = this.GetDescendants("node");
             foreach (XElement eachNode in nodes)
             {
-                XAttribute topicUrlAttribute = eachNode.Attribute("topicURL");
+                XAttribute? topicUrlAttribute = eachNode.Attribute("topicURL");
                 if (topicUrlAttribute != null && topicUrlAttribute.Value == topicUrl)
                 {
                     return EditorBase.IsTopicPublishedToMsdn(eachNode);
@@ -841,11 +841,11 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="sectionId">The section id to search for.</param>
         /// <returns>True if a section with the specified id exists, otherwise false.</returns>
-        public bool DoesSectionWithThisIdExist(string sectionId)
+        public bool DoesSectionWithThisIdExist(string? sectionId)
         {
             foreach (XElement section in this.GetDescendants("section"))
             {
-                XAttribute idAttribute = section.Attribute("id");
+                XAttribute? idAttribute = section.Attribute("id");
                 if (idAttribute != null && idAttribute.Value == sectionId) return true;
             }
             return false;
@@ -865,23 +865,23 @@ namespace MDSDKBase
         /// Gets a list of interfaces impemented by the type topic represented by the Editor.
         /// </summary>
         /// <returns>A list of interface names as strings.</returns>
-        public List<string> GetInterfacesImplemented()
+        public List<string>? GetInterfacesImplemented()
         {
-            List<string> interfacesImplemented = null;
-            XElement inheritance = this.GetUniqueDescendant("inheritance");
+            List<string>? interfacesImplemented = null;
+            XElement? inheritance = this.GetUniqueDescendant("inheritance");
             if (inheritance != null)
             {
-                List<XElement> ancestors = this.GetDescendants("ancestor", inheritance);
+                List<XElement>? ancestors = this.GetDescendants("ancestor", inheritance);
                 foreach (XElement eachAncestor in ancestors)
                 {
-                    XAttribute access_level = eachAncestor.Attribute("access_level");
+                    XAttribute? access_level = eachAncestor.Attribute("access_level");
                     if (access_level != null && access_level.Value == "private")
                     {
-                        XElement xref = this.GetUniqueDescendant("xref", eachAncestor);
+                        XElement? xref = this.GetUniqueDescendant("xref", eachAncestor);
                         if (xref != null)
                         {
-                            XAttribute targtype = xref.Attribute("targtype");
-                            if (targtype.Value == "interface_winrt")
+                            XAttribute? targtype = xref.Attribute("targtype");
+                            if (targtype!.Value == "interface_winrt")
                             {
                                 if (interfacesImplemented == null) interfacesImplemented = new List<string>();
                                 interfacesImplemented.Add(xref.Value);
@@ -902,9 +902,9 @@ namespace MDSDKBase
         /// Returns a copy of the first markdown table in the topic, or null if no markdown table is found.
         /// </summary>
         /// <returns>A Table object.</returns>
-        public Table GetFirstTable()
+        public Table? GetFirstTable()
         {
-            return Table.GetNextTable(this.FileInfo.FullName, this.fileLines);
+            return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines);
         }
 
         /// <summary>
@@ -915,9 +915,9 @@ namespace MDSDKBase
         /// <param name="content">Optional content to put inside the new element.</param>
         /// <param name="parentTheNewElementToThisElement">Optional element to parent the new element to (the parent can be, but doesn't have to be, inside the document represented by the Editor).</param>
         /// <returns>The new XElement.</returns>
-        public XElement NewXElement(string name, object content = null, XElement parentTheNewElementToThisElement = null)
+        public XElement NewXElement(string name, object? content = null, XElement? parentTheNewElementToThisElement = null)
         {
-            XElement xElement = new XElement(name, content);
+            XElement? xElement = new XElement(name, content);
             if (parentTheNewElementToThisElement != null)
             {
                 parentTheNewElementToThisElement.Add(xElement);
@@ -936,7 +936,7 @@ namespace MDSDKBase
         /// <param name="xElement"></param>
         /// <param name="attributeName"></param>
         /// <param name="value"></param>
-        public void SetAttributeValue(XElement xElement, string attributeName, string value)
+        public void SetAttributeValue(XElement? xElement, string attributeName, string? value)
         {
             if (xElement != null)
             {
@@ -951,10 +951,10 @@ namespace MDSDKBase
         /// <param name="titleAsString">The title to set.</param>
         public void SetMetadataAtTitle(string titleAsString)
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XElement title = this.GetUniqueDescendant("title", metadata);
+                XElement? title = this.GetUniqueDescendant("title", metadata);
                 if (title != null)
                 {
                     title.Value = titleAsString;
@@ -967,10 +967,10 @@ namespace MDSDKBase
         {
             var libraryFilenames = new List<string>();
 
-            XElement content = this.GetUniqueDescendant("content");
+            XElement? content = this.GetUniqueDescendant("content");
             if (content != null)
             {
-                XElement info = this.GetUniqueDescendant("info", content);
+                XElement? info = this.GetUniqueDescendant("info", content);
                 if (info != null)
                 {
                     List<XElement> libraries = this.GetDescendants("library", info);
@@ -978,7 +978,7 @@ namespace MDSDKBase
                     {
                         foreach (var library in libraries)
                         {
-                            XElement filename = this.GetUniqueDescendant("filename", library);
+                            XElement? filename = this.GetUniqueDescendant("filename", library);
                             if (filename != null)
                             {
                                 libraryFilenames.Add(filename.Value);
@@ -990,12 +990,12 @@ namespace MDSDKBase
             return libraryFilenames;
         }
 
-        public string GetMetadataAtBeta()
+        public string? GetMetadataAtBeta()
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute beta = metadata.Attribute("beta");
+                XAttribute? beta = metadata.Attribute("beta");
                 if (beta != null)
                 {
                     return beta.Value;
@@ -1006,10 +1006,10 @@ namespace MDSDKBase
 
         public void SetMetadataAtBeta(string betaAttributeValue)
         {
-            XElement metadata = this.GetUniqueDescendant("metadata");
+            XElement? metadata = this.GetUniqueDescendant("metadata");
             if (metadata != null)
             {
-                XAttribute beta = metadata.Attribute("beta");
+                XAttribute? beta = metadata.Attribute("beta");
                 if (beta != null)
                 {
                     beta.Value = betaAttributeValue;
@@ -1028,12 +1028,12 @@ namespace MDSDKBase
         /// </summary>
         /// <param name="topicUrl">The node@topicURL identifying the topic whose xtoc title you want to set.</param>
         /// <param name="text">The xtoc title to set.</param>
-        public void SetXtocNodeAtTextForTopicUrl(string topicUrl, string text)
+        public void SetXtocNodeAtTextForTopicUrl(string? topicUrl, string? text)
         {
             List<XElement> nodes = this.GetDescendants("node");
             foreach (XElement eachNode in nodes)
             {
-                XAttribute topicUrlAttribute = eachNode.Attribute("topicURL");
+                XAttribute? topicUrlAttribute = eachNode.Attribute("topicURL");
                 if (topicUrlAttribute != null && topicUrlAttribute.Value == topicUrl)
                 {
                     eachNode.SetAttributeValue("text", text);
@@ -1048,7 +1048,7 @@ namespace MDSDKBase
         /// </summary>
         public void EnsureAtLeastEmptyDeviceFamiliesAndApiContractsElements()
         {
-            XElement addAfterMe = this.GetUniqueDescendant("max_os");
+            XElement? addAfterMe = this.GetUniqueDescendant("max_os");
             if (addAfterMe == null)
             {
                 addAfterMe = this.GetUniqueDescendant("min_os");
@@ -1060,7 +1060,7 @@ namespace MDSDKBase
 
             if (addAfterMe != null)
             {
-                XElement device_families = this.GetUniqueDescendant("device_families");
+                XElement? device_families = this.GetUniqueDescendant("device_families");
                 if (device_families == null)
                 {
                     device_families = this.NewXElement("device_families");
@@ -1068,7 +1068,7 @@ namespace MDSDKBase
                     this.IsDirty = true;
                 }
 
-                XElement api_contracts = this.GetUniqueDescendant("api_contracts");
+                XElement? api_contracts = this.GetUniqueDescendant("api_contracts");
                 if (api_contracts == null)
                 {
                     device_families.AddAfterSelf(this.NewXElement("api_contracts"));
@@ -1098,19 +1098,19 @@ namespace MDSDKBase
         {
             if (!this.IsDirty) return;
 
-            string fileName = this.FileInfo.FullName;
+            string fileName = this.FileInfo!.FullName;
             try
             {
                 if (ProgramBase.LiveRun)
                 {
                     Interaction.Shell(string.Format("sd edit {0}", fileName), AppWinStyle.Hide, true);
                 }
-                this.xDocument.Save(fileName);
-                ProgramBase.FilesSavedLog.Add(fileName);
+                this.xDocument!.Save(fileName);
+                ProgramBase.FilesSavedLog!.Add(fileName);
             }
             catch (System.Exception ex)
             {
-                ProgramBase.FileSaveErrorsLog.Add(string.Format("{0}", ex.Message));
+                ProgramBase.FileSaveErrorsLog!.Add(string.Format("{0}", ex.Message));
             }
 
             this.IsDirty = false;

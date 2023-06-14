@@ -20,44 +20,44 @@ namespace MDSDK
         private List<ClassWin32> classWin32s = new List<ClassWin32>();
         private List<IoctlWin32> ioctlWin32s = new List<IoctlWin32>();
 
-        public void AddFreeFunctionWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddFreeFunctionWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.freeFunctionWin32s.Add(new FreeFunctionWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
 
-        public void AddEnumerationWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddEnumerationWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.enumerationWin32s.Add(new EnumerationWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
 
-        public void AddStructureWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddStructureWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.structureWin32s.Add(new StructureWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
 
-        public InterfaceCOM AddInterfaceCOM(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public InterfaceCOM AddInterfaceCOM(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             var interfaceCOM = new InterfaceCOM(name, headerName, topicUrl, moduleName, libraryNames);
             this.interfaceCOMs.Add(interfaceCOM);
             return interfaceCOM;
         }
 
-        public void AddMethodCOM(string name, string headerName, string topicUrl, InterfaceCOM theInterface, string moduleName = null, List<string> libraryNames = null)
+        public void AddMethodCOM(string name, string headerName, string topicUrl, InterfaceCOM theInterface, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.methodCOMs.Add(new MethodCOM(name, headerName, topicUrl, theInterface, moduleName, libraryNames));
         }
 
-        public void AddCallbackFunctionWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddCallbackFunctionWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.callbackFunctionWin32s.Add(new CallbackFunctionWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
 
-        public void AddClassWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddClassWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.classWin32s.Add(new ClassWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
 
-        public void AddIoctlWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null)
+        public void AddIoctlWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null)
         {
             this.ioctlWin32s.Add(new IoctlWin32(name, headerName, topicUrl, moduleName, libraryNames));
         }
@@ -100,13 +100,13 @@ namespace MDSDK
 
     internal abstract class Win32OrCOMAPI
     {
-        public string HeaderName { get; set; }
+        public string? HeaderName { get; set; }
         public List<string> LibraryNames { get; set; }
-        public string ModuleName { get; set; }
-        public string Name { get; set; }
-        public string TopicUrl { get; set; }
+        public string? ModuleName { get; set; }
+        public string? Name { get; set; }
+        public string? TopicUrl { get; set; }
 
-        public Win32OrCOMAPI(string name, string headerName, string topicUrl, string moduleName, List<string> libraryNames)
+        public Win32OrCOMAPI(string name, string headerName, string? topicUrl, string moduleName, List<string> libraryNames)
         {
             this.HeaderName = name;
             this.LibraryNames = libraryNames;
@@ -115,7 +115,7 @@ namespace MDSDK
             this.TopicUrl = topicUrl;
         }
 
-        public string MarkdownLink()
+        public string? MarkdownLink()
         {
             return $"[{this.Name}]({this.TopicUrl})";
         }
@@ -126,8 +126,8 @@ namespace MDSDK
     /// </summary>
     internal class FreeFunctionWin32 : Win32OrCOMAPI
     {
-        public FreeFunctionWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public FreeFunctionWin32(string name, string headerName, string? topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         { }
     }
 
@@ -136,8 +136,8 @@ namespace MDSDK
     /// </summary>
     internal class EnumerationWin32 : Win32OrCOMAPI
     {
-        public EnumerationWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public EnumerationWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         { }
     }
 
@@ -146,8 +146,8 @@ namespace MDSDK
     /// </summary>
     internal class StructureWin32 : Win32OrCOMAPI
     {
-        public StructureWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public StructureWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         { }
     }
 
@@ -158,8 +158,8 @@ namespace MDSDK
     {
         public List<string> MethodNames { get; set; }
 
-        public InterfaceCOM(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public InterfaceCOM(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         {
             this.MethodNames = new List<string>();
         }
@@ -172,8 +172,8 @@ namespace MDSDK
     {
         public InterfaceCOM Interface { get; set; }
 
-        public MethodCOM(string name, string headerName, string topicUrl, InterfaceCOM theInterface, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public MethodCOM(string name, string headerName, string topicUrl, InterfaceCOM theInterface, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         {
             this.Interface = theInterface;
         }
@@ -184,8 +184,8 @@ namespace MDSDK
     /// </summary>
     internal class CallbackFunctionWin32 : Win32OrCOMAPI
     {
-        public CallbackFunctionWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public CallbackFunctionWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         { }
     }
 
@@ -196,8 +196,8 @@ namespace MDSDK
     {
         public List<string> MemberFunctionNames { get; set; }
 
-        public ClassWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public ClassWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         {
             this.MemberFunctionNames = new List<string>();
         }
@@ -208,19 +208,19 @@ namespace MDSDK
     /// </summary>
     internal class IoctlWin32 : Win32OrCOMAPI
     {
-        public IoctlWin32(string name, string headerName, string topicUrl, string moduleName = null, List<string> libraryNames = null) :
-        base(name, headerName, topicUrl, moduleName, libraryNames)
+        public IoctlWin32(string name, string headerName, string topicUrl, string? moduleName = null, List<string>? libraryNames = null) :
+        base(name, headerName, topicUrl, moduleName!, libraryNames!)
         { }
     }
 
     /// <summary>
     /// Utility class used for sorting FunctionWin32s.
     /// </summary>
-    internal class FunctionWin32Comparer : Comparer<FreeFunctionWin32>
+    internal class FunctionWin32Comparer : Comparer<FreeFunctionWin32?>
     {
-        public override int Compare(FreeFunctionWin32 lhs, FreeFunctionWin32 rhs)
+        public override int Compare(FreeFunctionWin32? lhs, FreeFunctionWin32? rhs)
         {
-            return lhs.Name.CompareTo(rhs.Name);
+            return lhs!.Name!.CompareTo(rhs!.Name);
         }
     }
 
@@ -275,10 +275,10 @@ namespace MDSDK
     /// </summary>
     internal class FunctionWin32Grouped : FreeFunctionWin32
     {
-        public string SdkVersionIntroducedIn { get; set; }
-        public string SdkVersionRemovedIn { get; set; }
-        public string FunctionWin32Id { get; set; }
-        public Module ModuleMovedTo { get; set; }
+        public string? SdkVersionIntroducedIn { get; set; }
+        public string? SdkVersionRemovedIn { get; set; }
+        public string? FunctionWin32Id { get; set; }
+        public Module? ModuleMovedTo { get; set; }
 
         public FunctionWin32Grouped(string moduleName, string name, string sdkVersionIntroducedIn, string functionWin32Id)
             : base(name, moduleName, null)
@@ -290,7 +290,7 @@ namespace MDSDK
 
     internal class FunctionWin32GroupedByModule : FunctionWin32Grouped
     {
-        public string Requirements
+        public string? Requirements
         {
             get
             {
@@ -372,7 +372,7 @@ namespace MDSDK
             this.apis.Add(new FunctionWin32GroupedByModule(this.Name, name, sdkVersionIntroducedIn, functionWin32Id));
         }
 
-        public FunctionWin32GroupedByModule FindApi(string name)
+        public FunctionWin32GroupedByModule? FindApi(string name)
         {
             return this.apis.Find(found => found.Name == name);
         }
@@ -454,7 +454,7 @@ namespace MDSDK
     /// </summary>
     internal class UmbrellaLib
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public List<Module> Modules = new List<Module>();
         //public List<InitialCharGroup> InitialCharGroups = null;
 
@@ -465,11 +465,11 @@ namespace MDSDK
             this.Name = name;
         }
 
-        public Module GetModuleForApiName(string apiName)
+        public Module? GetModuleForApiName(string apiName)
         {
             foreach (Module module in this.Modules)
             {
-                FunctionWin32Grouped apiToAdd = module.FindApi(apiName);
+                FunctionWin32Grouped? apiToAdd = module.FindApi(apiName);
                 if (apiToAdd != null)
                 {
                     return module;

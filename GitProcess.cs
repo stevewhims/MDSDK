@@ -22,7 +22,7 @@ namespace MDSDK
             GitProcess.ProcessStartInfo.RedirectStandardInput = true;
             GitProcess.ProcessStartInfo.RedirectStandardOutput = true;
             GitProcess.ProcessStartInfo.UseShellExecute = false;
-            GitProcess.ProcessStartInfo.WorkingDirectory = $"{ProgramBase.MyContentReposFolderDirectoryInfo.FullName}\\{ProgramBase.ContentRepoName}";
+            GitProcess.ProcessStartInfo.WorkingDirectory = $"{ProgramBase.MyContentReposFolderDirectoryInfo!.FullName}\\{ProgramBase.ContentRepoName}";
         }
 
         static internal void CreatePersonalBranch(bool makeItATrackingBranch = true)
@@ -34,7 +34,7 @@ namespace MDSDK
             ProgramBase.ConsoleWrite($" :: GITGITGIT{Environment.NewLine}", ConsoleWriteStyle.Default);
             using (var createPersonalBranchProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
-                createPersonalBranchProcess.StandardInput.WriteLine($"git checkout -b {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName} origin/{ProgramBase.BaseBranchName}");
+                createPersonalBranchProcess!.StandardInput.WriteLine($"git checkout -b {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName} origin/{ProgramBase.BaseBranchName}");
                 if (makeItATrackingBranch) createPersonalBranchProcess.StandardInput.WriteLine($"git push --set-upstream origin {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
                 createPersonalBranchProcess.StandardInput.Close();
                 createPersonalBranchProcess.WaitForExit();
@@ -50,13 +50,16 @@ namespace MDSDK
             ProgramBase.ConsoleWrite($" :: GITGITGIT{Environment.NewLine}", ConsoleWriteStyle.Default);
             using (var stageAndCommitProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
-                stageAndCommitProcess.StandardInput.WriteLine("git add .");
-                stageAndCommitProcess.StandardInput.WriteLine($"git commit -a -m \"{ProgramBase.CommitMessage}\"");
-                stageAndCommitProcess.StandardInput.WriteLine("git push");
-                stageAndCommitProcess.StandardInput.Close();
-                stageAndCommitProcess.WaitForExit();
-                ProgramBase.ConsoleWrite(stageAndCommitProcess.StandardOutput.ReadToEnd(), ConsoleWriteStyle.OutputFromAnotherProcess);
-                stageAndCommitProcess.WaitForExit();
+                if (stageAndCommitProcess != null)
+                {
+                    stageAndCommitProcess.StandardInput.WriteLine("git add .");
+                    stageAndCommitProcess.StandardInput.WriteLine($"git commit -a -m \"{ProgramBase.CommitMessage}\"");
+                    stageAndCommitProcess.StandardInput.WriteLine("git push");
+                    stageAndCommitProcess.StandardInput.Close();
+                    stageAndCommitProcess.WaitForExit();
+                    ProgramBase.ConsoleWrite(stageAndCommitProcess.StandardOutput.ReadToEnd(), ConsoleWriteStyle.OutputFromAnotherProcess);
+                    stageAndCommitProcess.WaitForExit();
+                }
             }
         }
 
@@ -69,14 +72,17 @@ namespace MDSDK
             ProgramBase.ConsoleWrite($" :: GITGITGIT{Environment.NewLine}", ConsoleWriteStyle.Default);
             using (var deletePersonalBranchProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
-                if (deleteRemoteBranch) deletePersonalBranchProcess.StandardInput.WriteLine($"git push origin --delete {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
-                deletePersonalBranchProcess.StandardInput.WriteLine("git checkout main");
-                deletePersonalBranchProcess.StandardInput.WriteLine($"git branch -D {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
-                deletePersonalBranchProcess.StandardInput.WriteLine("git pull -p");
-                deletePersonalBranchProcess.StandardInput.Close();
-                deletePersonalBranchProcess.WaitForExit();
-                ProgramBase.ConsoleWrite(deletePersonalBranchProcess.StandardOutput.ReadToEnd(), ConsoleWriteStyle.OutputFromAnotherProcess);
-                deletePersonalBranchProcess.WaitForExit();
+                if (deletePersonalBranchProcess != null)
+                {
+                    if (deleteRemoteBranch) deletePersonalBranchProcess.StandardInput.WriteLine($"git push origin --delete {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
+                    deletePersonalBranchProcess.StandardInput.WriteLine("git checkout main");
+                    deletePersonalBranchProcess.StandardInput.WriteLine($"git branch -D {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
+                    deletePersonalBranchProcess.StandardInput.WriteLine("git pull -p");
+                    deletePersonalBranchProcess.StandardInput.Close();
+                    deletePersonalBranchProcess.WaitForExit();
+                    ProgramBase.ConsoleWrite(deletePersonalBranchProcess.StandardOutput.ReadToEnd(), ConsoleWriteStyle.OutputFromAnotherProcess);
+                    deletePersonalBranchProcess.WaitForExit();
+                }
             }
         }
     }

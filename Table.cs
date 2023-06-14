@@ -57,7 +57,7 @@ namespace MDSDK
         private static Regex TableRowRegex = new Regex(@"\|.*\|", RegexOptions.Compiled);
         private static Regex TableCellRegex = new Regex(@"\|[^\|]*", RegexOptions.Compiled);
 
-        private Table(List<string> columnHeadings = null, List<TableRow> rows = null, int firstLineNumberOneBased = -1)
+        private Table(List<string>? columnHeadings = null, List<TableRow>? rows = null, int firstLineNumberOneBased = -1)
         {
             this.ColumnHeadings = columnHeadings ?? new List<string>();
             this.Rows = rows ?? new List<TableRow>();
@@ -165,13 +165,13 @@ namespace MDSDK
             return (tablePerRow, skippedCellsPerRow);
         }
 
-        public static Table GetNextTable(string filename, List<string> fileLines, int lineNumberToStartAtZeroBased = 0)
+        public static Table? GetNextTable(string filename, List<string> fileLines, int lineNumberToStartAtZeroBased = 0)
         {
-            Table table = null;
+            Table? table = null;
             TableParseState tableParseState = TableParseState.NothingFound;
 
             int currentLineNumberOneBased = lineNumberToStartAtZeroBased + 1;
-            string currentTableRowString = null;
+            string? currentTableRowString;
             for (int ix = lineNumberToStartAtZeroBased; ix < fileLines.Count; ++ix)
             {
                 string eachLineTrimmed = fileLines[ix].Trim();
@@ -191,12 +191,12 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.HeaderUnderlineRowFound;
-                            table.ConfirmCellCountsMatch(filename, currentTableRowString);
+                            table!.ConfirmCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
+                            table!.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.HeaderUnderlineRowFound:
@@ -204,24 +204,24 @@ namespace MDSDK
                         if (currentTableRowString != null)
                         {
                             tableParseState = TableParseState.BodyFound;
-                            table.AddRowIfCellCountsMatch(filename, currentTableRowString);
+                            table!.AddRowIfCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
+                            table!.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.BodyFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
                         if (currentTableRowString != null)
                         {
-                            table.AddRowIfCellCountsMatch(filename, currentTableRowString);
+                            table!.AddRowIfCellCountsMatch(filename, currentTableRowString);
                         }
                         else
                         {
                             tableParseState = TableParseState.EndFound;
-                            table.LastLineNumberOneBased = currentLineNumberOneBased - 1;
+                            table!.LastLineNumberOneBased = currentLineNumberOneBased - 1;
                         }
                         break;
                     case TableParseState.EndFound:
@@ -254,7 +254,7 @@ namespace MDSDK
             this.Rows.Add(ConfirmCellCountsMatch(filename, currentTableRowString));
         }
 
-        private static string LineToTableRow(string line)
+        private static string? LineToTableRow(string line)
         {
             var rowMatches = Table.TableRowRegex.Matches(line);
             if (rowMatches.Count == 1)
