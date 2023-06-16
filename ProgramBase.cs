@@ -617,6 +617,15 @@ namespace MDSDKBase
             Console.ForegroundColor = previousColor;
         }
 
+        public const int NumberOfCharsToIndentIncrement = 2;
+        public static char IndentationChar = ' ';
+        public static void ConsoleWriteIndent(int numberOfCharsToIndent)
+        {
+            string indentation = string.Empty;
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentation += ProgramBase.IndentationChar;
+            ProgramBase.ConsoleWrite(indentation, ConsoleWriteStyle.Default, 0);
+        }
+
         private void OutputFilesSavedLog()
         {
             ProgramBase.DeleteFileIfExists(ProgramBase.FilesSavedLog!.Filename);

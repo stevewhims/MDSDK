@@ -2,6 +2,7 @@
 using MDSDKBase;
 using MDSDKDerived;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -12,14 +13,34 @@ using System.Xml.Schema;
 
 namespace MDSDK
 {
+    internal class ChildElementAdapter
+    {
+        /// <summary>
+        /// A class that adapts to either a non-topic or a topic child element.
+        /// </summary>
+        /// 
+        public SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorThatIsAChildOfThis = null;
+        public XmlSchemaElement? XmlSchemaElementThatIsAChildOfThis = null;
+
+        public ChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
+        {
+            this.schemerComplexTypeElementEditorThatIsAChildOfThis = schemerComplexTypeElementEditorThatIsAChildOfThis;
+        }
+
+        public ChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
+        {
+            this.XmlSchemaElementThatIsAChildOfThis = xmlSchemaElementThatIsAChildOfThis;
+        }
+    }
+
     /// <summary>
     /// A class that generates and maintains XML schema content.
-    /// https://learn.microsoft.com/dotnet/standard/data/xml/reading-and-writing-xml-schemas
+    /// See https://learn.microsoft.com/dotnet/standard/data/xml/reading-and-writing-xml-schemas.
     /// </summary>
     internal class Schemer
     {
-        private SchemerAllElementsGeneratedTopic? _schemerElementsGeneratedTopic = null;
-        private SchemerParentElementGeneratedTopic? _schemerParentElementGeneratedTopicRoot = null;
+        private SchemerElementsLandingPageEditor? _schemerElementsLandingPageEditor = null;
+        private SchemerComplexTypeElementEditor? _schemerComplexTypeElementEditorRoot = null;
         private string? _xsdFileName = null;
 
         public Schemer(string topicsRootPath, string topicsFolderName, string schemaName, string xsdFileName)
@@ -28,6 +49,11 @@ namespace MDSDK
             SchemerEditorBase.DirectoryInfoForGeneratedTopics = new DirectoryInfo(topicsRootPath + topicsFolderName + @"_gen");
             SchemerEditorBase.SchemaName = schemaName;
             this._xsdFileName = xsdFileName;
+        }
+
+        public void DebugInit()
+        {
+            SchemerEditorBase.DirectoryInfoForGeneratedTopics!.Delete(true);
         }
 
         /// <summary>
@@ -76,8 +102,9 @@ namespace MDSDK
                     }
                 }
 
+                ProgramBase.ConsoleWrite(string.Empty);
                 ProgramBase.ConsoleWrite("Printing out tree of Editors...");
-                this._schemerParentElementGeneratedTopicRoot!.PrintElementTree();
+                this._schemerComplexTypeElementEditorRoot!.PrintElementTree();
             }
             catch (Exception e)
             {
@@ -85,22 +112,20 @@ namespace MDSDK
             }
         }
 
-        private void SurveyElementRecursive(SchemerParentElementGeneratedTopic? schemerParentElementGeneratedTopicParent, XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, int indentation = 0)
+        private void SurveyElementRecursive(SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorParent, XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, int indentation = 0)
         {
-            if (this._schemerElementsGeneratedTopic == null)
+            if (this._schemerElementsLandingPageEditor == null)
             {
-                FileInfo fileInfoGenerated = SchemerAllElementsGeneratedTopic.FormatFileInfo(true);
-                this._schemerElementsGeneratedTopic = new SchemerAllElementsGeneratedTopic(fileInfoGenerated, xmlSchemaElement);
+                FileInfo fileInfoGenerated = SchemerElementsLandingPageEditor.FormatFileInfo(true);
+                this._schemerElementsLandingPageEditor = new SchemerElementsLandingPageEditor(fileInfoGenerated, xmlSchemaElement);
             }
 
-            SchemerParentElementGeneratedTopic? schemerParentElementGeneratedTopic = null;
+            SchemerComplexTypeElementEditor? schemerComplexTypeElementEditor = null;
 
-            for (int i = 0; i < indentation; i++)
-            {
-                ProgramBase.ConsoleWrite(" ", ConsoleWriteStyle.Default, 0);
-            }
+            ProgramBase.ConsoleWriteIndent(indentation);
 
-            ProgramBase.ConsoleWrite(xmlSchemaElement.Name + " element (", ConsoleWriteStyle.Default, 0);
+            ProgramBase.ConsoleWrite(xmlSchemaElement.Name + " element", ConsoleWriteStyle.Highlight, 0);
+            ProgramBase.ConsoleWrite(" (", ConsoleWriteStyle.Default, 0);
 
             XmlSchemaComplexType? xmlSchemaComplexType = xmlSchemaElement.ElementSchemaType as XmlSchemaComplexType;
             if (xmlSchemaComplexType != null)
@@ -113,32 +138,37 @@ namespace MDSDK
                         XmlSchemaElement? childXmlSchemaElement = item as XmlSchemaElement;
                         if (childXmlSchemaElement != null)
                         {
-                            if (schemerParentElementGeneratedTopic == null)
+                            if (schemerComplexTypeElementEditor == null)
                             {
                                 FileInfo fileInfoGenerated = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, xmlSchemaElement, true);
                                 ProgramBase.ConsoleWrite("will create " + fileInfoGenerated.FullName + ")");
 
-                                // Create a new element topic, and add it to its parent topic's child elements collection.
-                                schemerParentElementGeneratedTopic = new SchemerParentElementGeneratedTopic(fileInfoGenerated, xmlSchemaElement);
-                                if (schemerParentElementGeneratedTopicParent != null)
+                                // Create a new element topic, and add it to its parent topic's child element adapters collection.
+                                schemerComplexTypeElementEditor = new SchemerComplexTypeElementEditor(fileInfoGenerated, xmlSchemaElement);
+                                if (schemerComplexTypeElementEditorParent != null)
                                 {
-                                    schemerParentElementGeneratedTopicParent.Add(schemerParentElementGeneratedTopic);
+                                    schemerComplexTypeElementEditorParent.AddChildElementAdapter(schemerComplexTypeElementEditor);
                                 }
 
-                                if (this._schemerParentElementGeneratedTopicRoot == null)
+                                if (this._schemerComplexTypeElementEditorRoot == null)
                                 {
-                                    this._schemerParentElementGeneratedTopicRoot = schemerParentElementGeneratedTopic;
+                                    this._schemerComplexTypeElementEditorRoot = schemerComplexTypeElementEditor;
                                 }
                             }
 
-                            this.SurveyElementRecursive(schemerParentElementGeneratedTopic, xmlSchemaElement, childXmlSchemaElement, indentation + 2);
+                            this.SurveyElementRecursive(schemerComplexTypeElementEditor, xmlSchemaElement, childXmlSchemaElement, indentation + ProgramBase.NumberOfCharsToIndentIncrement);
                         }
                     }
                 }
             }
 
-            if (schemerParentElementGeneratedTopic == null)
+            if (schemerComplexTypeElementEditor == null)
             {
+                if (schemerComplexTypeElementEditorParent != null)
+                {
+                    schemerComplexTypeElementEditorParent.AddChildElementAdapter(xmlSchemaElement);
+                }
+
                 FileInfo fileInfo = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, xmlSchemaElement, false);
                 if (fileInfo.Exists)
                 {
@@ -168,7 +198,7 @@ namespace MDSDK
         {
             ProgramBase.ConsoleWrite("*** GENERATE PHASE ***", ConsoleWriteStyle.Default, 2);
 
-            this._schemerParentElementGeneratedTopicRoot!.Generate();
+            this._schemerComplexTypeElementEditorRoot!.Generate();
         }
 
         /// <summary>
@@ -178,7 +208,7 @@ namespace MDSDK
         {
             ProgramBase.ConsoleWrite("*** COMMIT PHASE ***", ConsoleWriteStyle.Default, 2);
 
-            this._schemerParentElementGeneratedTopicRoot!.Commit();
+            this._schemerComplexTypeElementEditorRoot!.Commit();
         }
     }
 }

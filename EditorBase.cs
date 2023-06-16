@@ -1,6 +1,7 @@
 ﻿using MDSDK;
 using MDSDKDerived;
 using Microsoft.VisualBasic;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using System.Xml.Schema;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MDSDKBase
 {
@@ -65,6 +68,8 @@ namespace MDSDKBase
         private static string StructureTopicStructFieldsH2 = "## -struct-fields";
 
         private static string YamlFrontmatterDelimiter = "---";
+        private static string SyntaxStartDelimiter = "```syntax";
+        private static string CodeBlockEndDelimiter = "```";
 
         /// <summary>
         /// Constructs a new EditorBase.
@@ -1150,104 +1155,180 @@ namespace MDSDKBase
             return null;
         }
 
-        public void BeginYamlFrontmatter()
+        public void Write(string text)
         {
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                streamWriter.WriteLine(EditorBase.YamlFrontmatterDelimiter);
+                streamWriter.Write(text);
             }
         }
 
-        public void EndYamlFrontmatter()
+        public void WriteLine(string? text = null)
         {
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                streamWriter.WriteLine(EditorBase.YamlFrontmatterDelimiter);
-                streamWriter.WriteLine();
+                streamWriter.WriteLine(text ?? String.Empty);
             }
         }
 
-        private void WriteYamlFrontmatter(string key, string value)
+        public const int NumberOfCharsToIndentIncrement = 4;
+        public static char IndentationChar = ' ';
+        public void WriteIndent(int numberOfCharsToIndent)
         {
-            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
-            {
-                streamWriter.WriteLine(key + ": " + value);
-            }
+            string indentation = string.Empty;
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentation += EditorBase.IndentationChar;
+            this.Write(indentation);
         }
 
-        private void WriteYamlFrontmatter(string key, string[] values)
+        public static void IncrementIndent(ref int numberOfCharsToIndent)
         {
-            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            numberOfCharsToIndent += EditorBase.NumberOfCharsToIndentIncrement;
+        }
+
+        public static void DecrementIndent(ref int numberOfCharsToIndent)
+        {
+            numberOfCharsToIndent -= EditorBase.NumberOfCharsToIndentIncrement;
+        }
+
+        public void WriteBeginYamlFrontmatter()
+        {
+            this.WriteLine(EditorBase.YamlFrontmatterDelimiter);
+        }
+
+        public void WriteEndYamlFrontmatter()
+        {
+            this.WriteLine(EditorBase.YamlFrontmatterDelimiter);
+        }
+
+        private void WriteYamlFrontmatterKeyValuePair(string key, string value)
+        {
+            this.WriteLine(key + ": " + value);
+        }
+
+        private void WriteYamlFrontmatterKeyValues(string key, string[] values)
+        {
+            this.WriteLine(key + ": ");
+            foreach (string value in values)
             {
-                streamWriter.WriteLine(key + ": ");
-                foreach (string value in values)
-                {
-                    streamWriter.WriteLine("- " + value);
-                }
+                this.WriteLine("- " + value);
             }
         }
 
         public void WriteYamlFrontmatterTitle(string value)
         {
-            WriteYamlFrontmatter("title", value);
+            WriteYamlFrontmatterKeyValuePair("title", value);
         }
 
         public void WriteYamlFrontmatterDescription(string value)
         {
-            WriteYamlFrontmatter("description", value);
+            WriteYamlFrontmatterKeyValuePair("description", value);
         }
 
         public void WriteYamlFrontmatterMsAssetId(string? value)
         {
-            if (value != null) WriteYamlFrontmatter("ms.assetid", value);
+            if (value != null) WriteYamlFrontmatterKeyValuePair("ms.assetid", value);
         }
 
         public void WriteYamlFrontmatterMsTopicReference()
         {
-            WriteYamlFrontmatter("ms.topic", "reference");
+            WriteYamlFrontmatterKeyValuePair("ms.topic", "reference");
         }
 
         public void WriteYamlFrontmatterMsDate()
         {
-            WriteYamlFrontmatter("ms.date", DateTime.Now.ToString("MM/dd/yy"));
+            WriteYamlFrontmatterKeyValuePair("ms.date", DateTime.Now.ToString("MM/dd/yy"));
         }
 
         public void WriteYamlFrontmatterTopicTypeAPIRefKbSyntax()
         {
-            WriteYamlFrontmatter("topic_type", new string[] { "APIRef", "kbSyntax" });
+            WriteYamlFrontmatterKeyValues("topic_type", new string[] { "APIRef", "kbSyntax" });
         }
 
         public void WriteYamlFrontmatterApiName(string value)
         {
-            WriteYamlFrontmatter("api_name", new string[] { value });
+            WriteYamlFrontmatterKeyValues("api_name", new string[] { value });
         }
 
         public void WriteYamlFrontmatterApiTypeSchema()
         {
-            WriteYamlFrontmatter("api_type", new string[] { "Schema" });
+            WriteYamlFrontmatterKeyValues("api_type", new string[] { "Schema" });
         }
 
         public void WriteYamlFrontmatterApiLocation(string value)
         {
-            WriteYamlFrontmatter("api_location", value);
+            WriteYamlFrontmatterKeyValuePair("api_location", value);
         }
 
         public void WriteSectionHeading(int hLevel, string heading)
         {
-            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            this.WriteLine();
+            string headingText = string.Empty;
+            for (int ix = 0; ix < hLevel; ix++) headingText += '#';
+            headingText += " " + heading;
+            this.WriteLine(headingText);
+            this.WriteLine();
+        }
+
+        public void WriteBeginSyntax()
+        {
+            this.WriteLine(EditorBase.SyntaxStartDelimiter);
+        }
+
+        public void WriteBeginComplexTypeElement(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent)
+        {
+            this.WriteOpeningElementTag(xmlSchemaElement, ref numberOfCharsToIndent);
+            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+
+            // Opening complexType tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("<xs:complexType>");
+            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+
+            // Opening sequence tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("<xs:sequence>");
+            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+        }
+
+        public void WriteOpeningElementTag(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent)
+        {
+            // Opening element tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.Write("<xs:element name=\"" + xmlSchemaElement.Name + "\"");
+            if (xmlSchemaElement.MinOccurs == 0)
             {
-                streamWriter.WriteLine();
-                for (int i = 0; i < hLevel; i++)
-                {
-                    streamWriter.Write('#');
-                }
-                streamWriter.WriteLine(" " + heading);
-                streamWriter.WriteLine();
+                this.WriteLine("");
+                this.WriteIndent(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement);
+                this.WriteLine("minOccurs=\"0\"");
+                this.WriteIndent(numberOfCharsToIndent + 1);
+                this.WriteLine(">");
+            }
+            else
+            {
+                this.WriteLine(">");
             }
         }
 
-        public void WriteSyntax()
+        public void WriteEndComplexTypeElement(ref int numberOfCharsToIndent)
         {
+            // Closing sequence tag.
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:sequence>");
+
+            // Closing complexType tag.
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:complexType>");
+
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:element>");
+        }
+
+        public void WriteEndSyntax()
+        {
+            this.WriteLine(EditorBase.CodeBlockEndDelimiter);
         }
 
         public void WriteSectionHeadingChildElements()

@@ -6,6 +6,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 using System.Security.Permissions;
 using System.Text;
@@ -50,11 +52,11 @@ namespace MDSDK
     /// <summary>
     /// Topic for an all-elements landing page, such as https://learn.microsoft.com/windows/win32/nativewifi/wlan-profileschema-elements.
     /// </summary>
-	internal class SchemerAllElementsGeneratedTopic : SchemerEditorBase
+	internal class SchemerElementsLandingPageEditor : SchemerEditorBase
     {
-        private XmlSchemaElement? _xmlSchemaElementRoot = null;
+        private XmlSchemaElement _xmlSchemaElementRoot;
 
-        public SchemerAllElementsGeneratedTopic(FileInfo fileInfo, XmlSchemaElement xmlSchemaElementRoot) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
+        public SchemerElementsLandingPageEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElementRoot) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
         {
             this._xmlSchemaElementRoot = xmlSchemaElementRoot;
         }
@@ -75,46 +77,58 @@ namespace MDSDK
     /// <summary>
     /// Topic for a parent element topic, such as https://learn.microsoft.com/windows/win32/nativewifi/wlan-profileschema-macrandomization-wlanprofile-element.
     /// </summary>
-	internal class SchemerParentElementGeneratedTopic : SchemerEditorBase
+	internal class SchemerComplexTypeElementEditor : SchemerEditorBase
     {
-        protected Collection<SchemerParentElementGeneratedTopic>? _childElementTopics;
-        protected SchemerParentElementGeneratedTopic? _parent = null;
+        protected XmlSchemaElement _xmlSchemaElement;
+        public string? XmlSchemaElementName { get { return this._xmlSchemaElement.Name; } }
 
-        protected XmlSchemaElement? _xmlSchemaElement = null;
-        public string? XmlSchemaElementName { get { return this._xmlSchemaElement!.Name; } }
+        protected Collection<ChildElementAdapter>? _childElementAdapters = null;
+        protected SchemerComplexTypeElementEditor? _parent = null;
 
-        public SchemerParentElementGeneratedTopic(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
+        public SchemerComplexTypeElementEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
         {
             this._xmlSchemaElement = xmlSchemaElement;
         }
 
-        public void Add(SchemerParentElementGeneratedTopic parentTopicThatIsAChildOfThis)
+        public void AddChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
         {
-            if (this._childElementTopics == null)
+            if (this._childElementAdapters == null)
             {
-                this._childElementTopics = new Collection<SchemerParentElementGeneratedTopic>();
+                this._childElementAdapters = new Collection<ChildElementAdapter>();
             }
+            this._childElementAdapters!.Add(new ChildElementAdapter(schemerComplexTypeElementEditorThatIsAChildOfThis));
+            schemerComplexTypeElementEditorThatIsAChildOfThis._parent = this;
+        }
 
-            _childElementTopics!.Add(parentTopicThatIsAChildOfThis);
-            parentTopicThatIsAChildOfThis._parent = this;
+        public void AddChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
+        {
+            if (this._childElementAdapters == null)
+            {
+                this._childElementAdapters = new Collection<ChildElementAdapter>();
+            }
+            this._childElementAdapters!.Add(new ChildElementAdapter(xmlSchemaElementThatIsAChildOfThis));
         }
 
         // Methods that don't modify.
 
         public void PrintElementTree(int indentation = 0)
         {
-            for (int i = 0; i < indentation; i++)
-            {
-                ProgramBase.ConsoleWrite(" ", ConsoleWriteStyle.Default, 0);
-            }
+            ProgramBase.ConsoleWriteIndent(indentation);
+            ProgramBase.ConsoleWrite(this.XmlSchemaElementName + " element", ConsoleWriteStyle.Highlight);
 
-            ProgramBase.ConsoleWrite(this.XmlSchemaElementName + " element");
-
-            if (this._childElementTopics != null)
+            if (this._childElementAdapters != null)
             {
-                foreach (var childElementTopic in this._childElementTopics)
+                foreach (var childElementAdapter in this._childElementAdapters!)
                 {
-                    childElementTopic.PrintElementTree(indentation + 2);
+                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    {
+                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.PrintElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                    }
+                    else
+                    {
+                        ProgramBase.ConsoleWriteIndent(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                        ProgramBase.ConsoleWrite(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name + " element", ConsoleWriteStyle.Highlight);
+                    }
                 }
             }
         }
@@ -129,15 +143,24 @@ namespace MDSDK
             {
                 xmlSchemaElementParent = this._parent._xmlSchemaElement;
             }
-            FileInfo fileInfoExisting = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, this._xmlSchemaElement!, false);
-            SchemerElementExistingTopic schemerElementExistingTopic = new SchemerElementExistingTopic(fileInfoExisting);
 
-            this.BeginYamlFrontmatter();
+            FileInfo fileInfoPossiblyExisting = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, this._xmlSchemaElement, false);
+            SchemerElementExistingTopic? schemerElementExistingTopic = null;
+            if (fileInfoPossiblyExisting.Exists)
+            {
+                schemerElementExistingTopic = new SchemerElementExistingTopic(fileInfoPossiblyExisting);
+            }
+            else
+            {
+                ProgramBase.ConsoleWrite(fileInfoPossiblyExisting.FullName + " doesn't exist; nothing to mine.", ConsoleWriteStyle.Highlight);
+            }
+
+            this.WriteBeginYamlFrontmatter();
             this.WriteYamlFrontmatterTitle(this.XmlSchemaElementName + " element");
 
             this.WriteYamlFrontmatterDescription("TBD");
 
-            this.WriteYamlFrontmatterMsAssetId(schemerElementExistingTopic.GetYamlMsAssetId());
+            if (schemerElementExistingTopic != null) this.WriteYamlFrontmatterMsAssetId(schemerElementExistingTopic!.GetYamlMsAssetId());
 
             this.WriteYamlFrontmatterMsTopicReference();
             this.WriteYamlFrontmatterMsDate();
@@ -146,11 +169,13 @@ namespace MDSDK
             this.WriteYamlFrontmatterApiTypeSchema();
 
             this.WriteYamlFrontmatterApiLocation(string.Empty);
-            this.EndYamlFrontmatter();
+            this.WriteEndYamlFrontmatter();
 
             this.WriteSectionHeading(1, this.XmlSchemaElementName!);
 
-            this.WriteSyntax();
+            this.WriteBeginSyntax();
+            this.GenerateSyntax();
+            this.WriteEndSyntax();
 
             this.WriteSectionHeadingChildElements();
 
@@ -158,93 +183,63 @@ namespace MDSDK
 
             this.WriteSectionHeadingRequirements();
 
-            if (this._childElementTopics != null)
+            if (this._childElementAdapters != null)
             {
-                foreach (var childElementTopic in this._childElementTopics)
+                foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    childElementTopic.Generate();
+                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    {
+                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
+                    }
                 }
             }
         }
 
+        public void GenerateSyntax()
+        {
+            int numberOfCharsToIndent = 0;
+
+            this.WriteBeginComplexTypeElement(this._xmlSchemaElement, ref numberOfCharsToIndent);
+
+            this.GenerateSyntaxForImmediateChildren(ref numberOfCharsToIndent);
+
+            WriteEndComplexTypeElement(ref numberOfCharsToIndent);
+        }
+
+        public void GenerateSyntaxForImmediateChildren(ref int numberOfCharsToIndent)
+        {
+            if (this._childElementAdapters != null)
+            {
+                foreach (var childElementAdapter in this._childElementAdapters)
+                {
+                    //this.WriteIndent(numberOfCharsToIndent);
+                    //this.Write("<xs:element name=\"");
+                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    {
+                        this.WriteOpeningElementTag(childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis._xmlSchemaElement, ref numberOfCharsToIndent);
+                    }
+                    else
+                    {
+                        //this.WriteLine(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name! + "\">");
+                        this.WriteOpeningElementTag(childElementAdapter.XmlSchemaElementThatIsAChildOfThis, ref numberOfCharsToIndent);
+                    }
+                }
+            }
+        }
+
+
         public void Commit()
         {
-            if (this._childElementTopics != null)
+            if (this._childElementAdapters != null)
             {
-                foreach (var childElementTopic in this._childElementTopics)
+                foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    childElementTopic.Commit();
+                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    {
+                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
+                    }
                 }
             }
         }
     }
 }
-
-//The LANProfile element contains a wired network profile. This element is the unique root element for a wired network profile.
-
-//The target namespace for the LANProfile element is `https://www.microsoft.com/networking/LAN/profile/v1`.
-
-//``` syntax
-//<xs:element name="LANProfile">
-//    <xs:complexType>
-//        <xs:sequence>
-//            <xs:element name = "MSM" >
-//                < xs:complexType>
-//                    <xs:sequence>
-//                        <xs:element name = "security" >
-//                            < xs:complexType>
-//                                <xs:sequence>
-//                                    <xs:element name = "OneXEnforced"
-//                                        type="boolean"
-//                                     />
-//                                    <xs:element name = "OneXEnabled"
-//                                        type="boolean"
-//                                     />
-//                                    <xs:any
-//                                        processContents = "lax"
-//                                        minOccurs="0"
-//                                        maxOccurs="unbounded"
-//                                        namespace="##other"
-//                                     />
-//                                </xs:sequence>
-//                            </xs:complexType>
-//                        </xs:element>
-//                        <xs:any
-//                            processContents = "lax"
-//                            minOccurs="0"
-//                            maxOccurs="unbounded"
-//                            namespace="##other"
-//                         />
-//                    </xs:sequence>
-//                </xs:complexType>
-//            </xs:element>
-//            <xs:any
-//                processContents = "lax"
-//                minOccurs="0"
-//                maxOccurs="unbounded"
-//                namespace="##other"
-//             />
-//        </xs:sequence>
-//    </xs:complexType>
-//</xs:element>
-//```
-
-//## Child elements
-
-//| Element | Type | Description |
-//|-|-|-|
-//| [**MSM**](lan-profileschema-msm-lanprofile-element.md) | | Contains media-specific module(MSM) settings. |
-//| [**OneXEnabled**] (lan-profileschema-onexenabled-security-element.md) | boolean | Specifies whether the automatic configuration service for wired networks will attempt port authentication using 802.1X. |
-//| [**OneXEnforced**] (lan-profileschema-onexenforced-security-element.md) | boolean | Specifies whether the automatic configuration service for wired networks requires the use of 802.1X for port authentication. |
-//| [**security**] (lan-profileschema-security-msm-element.md) | | Contains security settings. |
-
-//## Remarks
-
-//To view the list of child elements in a tree-like structure, see[LAN\_profile Schema Elements](lan-profileschema-elements.md).
-
-//## Requirements
-
-//| Requirement | Value |
-//|- | -|
-//| Minimum supported client | Windows Vista \[desktop apps only\] |
-//| Minimum supported server | Windows Server 2008 \[desktop apps only\] |
