@@ -3,6 +3,7 @@ using MDSDKDerived;
 using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -37,7 +38,7 @@ namespace MDSDKBase
         /// </summary>
         protected List<string> fileLines = new List<string>();
         /// <summary>
-        /// The XDocument object representing the xml document.
+        /// The XDocument object representing the xml document. TODO: delete this when possible; it's a holdover from the WDCML version.
         /// </summary>
         protected XDocument? xDocument = null;
         /// <summary>
@@ -50,6 +51,7 @@ namespace MDSDKBase
 
         private static Regex DeconstructMarkdownLinkRegex = new Regex(@"\[(?<link_text>.*)\]\((?<link_url>.*)\)", RegexOptions.Compiled);
         private static Regex TwoSpacesRegex = new Regex("  ", RegexOptions.Compiled);
+        private static Regex MsAssetIdRegex = new Regex(@"ms.assetid: (?<ms_asset_id>.*)", RegexOptions.Compiled);
 
         private static string IndexMdCallbackFunctionsH2 = "## Callback functions";
         private static string IndexMdClassesH2 = "## Classes";
@@ -61,6 +63,8 @@ namespace MDSDKBase
 
         private static string InterfaceTopicMethodsH2 = "## Methods";
         private static string StructureTopicStructFieldsH2 = "## -struct-fields";
+
+        private static string YamlFrontmatterDelimiter = "---";
 
         /// <summary>
         /// Constructs a new EditorBase.
@@ -1135,5 +1139,130 @@ namespace MDSDKBase
             this.IsDirty = false;
         }
         #endregion
+
+        public string? GetYamlMsAssetId()
+        {
+            var matches = EditorBase.MsAssetIdRegex.Matches(this.fileContents!);
+            if (matches.Count == 1)
+            {
+                return matches[0].Groups["ms_asset_id"].Value.Trim();
+            }
+            return null;
+        }
+
+        public void BeginYamlFrontmatter()
+        {
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine(EditorBase.YamlFrontmatterDelimiter);
+            }
+        }
+
+        public void EndYamlFrontmatter()
+        {
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine(EditorBase.YamlFrontmatterDelimiter);
+                streamWriter.WriteLine();
+            }
+        }
+
+        private void WriteYamlFrontmatter(string key, string value)
+        {
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine(key + ": " + value);
+            }
+        }
+
+        private void WriteYamlFrontmatter(string key, string[] values)
+        {
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine(key + ": ");
+                foreach (string value in values)
+                {
+                    streamWriter.WriteLine("- " + value);
+                }
+            }
+        }
+
+        public void WriteYamlFrontmatterTitle(string value)
+        {
+            WriteYamlFrontmatter("title", value);
+        }
+
+        public void WriteYamlFrontmatterDescription(string value)
+        {
+            WriteYamlFrontmatter("description", value);
+        }
+
+        public void WriteYamlFrontmatterMsAssetId(string? value)
+        {
+            if (value != null) WriteYamlFrontmatter("ms.assetid", value);
+        }
+
+        public void WriteYamlFrontmatterMsTopicReference()
+        {
+            WriteYamlFrontmatter("ms.topic", "reference");
+        }
+
+        public void WriteYamlFrontmatterMsDate()
+        {
+            WriteYamlFrontmatter("ms.date", DateTime.Now.ToString("MM/dd/yy"));
+        }
+
+        public void WriteYamlFrontmatterTopicTypeAPIRefKbSyntax()
+        {
+            WriteYamlFrontmatter("topic_type", new string[] { "APIRef", "kbSyntax" });
+        }
+
+        public void WriteYamlFrontmatterApiName(string value)
+        {
+            WriteYamlFrontmatter("api_name", new string[] { value });
+        }
+
+        public void WriteYamlFrontmatterApiTypeSchema()
+        {
+            WriteYamlFrontmatter("api_type", new string[] { "Schema" });
+        }
+
+        public void WriteYamlFrontmatterApiLocation(string value)
+        {
+            WriteYamlFrontmatter("api_location", value);
+        }
+
+        public void WriteSectionHeading(int hLevel, string heading)
+        {
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine();
+                for (int i = 0; i < hLevel; i++)
+                {
+                    streamWriter.Write('#');
+                }
+                streamWriter.WriteLine(" " + heading);
+                streamWriter.WriteLine();
+            }
+        }
+
+        public void WriteSyntax()
+        {
+        }
+
+        public void WriteSectionHeadingChildElements()
+        {
+            this.WriteSectionHeading(2, "Child elements");
+        }
+
+        public void WriteSectionHeadingRemarks()
+        {
+            this.WriteSectionHeading(2, "Remarks");
+        }
+
+        public void WriteSectionHeadingRequirements()
+        {
+            this.WriteSectionHeading(2, "Requirements");
+        }
     }
 }
