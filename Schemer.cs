@@ -19,12 +19,12 @@ namespace MDSDK
         /// A class that adapts to either a non-topic or a topic child element.
         /// </summary>
         /// 
-        public SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorThatIsAChildOfThis = null;
+        public SchemerComplexTypeElementEditor? SchemerComplexTypeElementEditorThatIsAChildOfThis = null;
         public XmlSchemaElement? XmlSchemaElementThatIsAChildOfThis = null;
 
         public ChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
         {
-            this.schemerComplexTypeElementEditorThatIsAChildOfThis = schemerComplexTypeElementEditorThatIsAChildOfThis;
+            this.SchemerComplexTypeElementEditorThatIsAChildOfThis = schemerComplexTypeElementEditorThatIsAChildOfThis;
         }
 
         public ChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
@@ -130,6 +130,12 @@ namespace MDSDK
             XmlSchemaComplexType? xmlSchemaComplexType = xmlSchemaElement.ElementSchemaType as XmlSchemaComplexType;
             if (xmlSchemaComplexType != null)
             {
+                if (xmlSchemaComplexType.ContentType != XmlSchemaContentType.ElementOnly)
+                {
+                    ProgramBase.ConsoleWrite("The assumption is that complex types contain only elements (not attributes). Need to rewrite the tool.", ConsoleWriteStyle.Error);
+                    throw new MDSDKException();
+                }
+
                 XmlSchemaSequence? xmlSchemaSequence = xmlSchemaComplexType.ContentTypeParticle as XmlSchemaSequence;
                 if (xmlSchemaSequence != null)
                 {
@@ -157,6 +163,15 @@ namespace MDSDK
                             }
 
                             this.SurveyElementRecursive(schemerComplexTypeElementEditor, xmlSchemaElement, childXmlSchemaElement, indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                        }
+
+                        XmlSchemaAny? childXmlSchemaAny = item as XmlSchemaAny;
+                        if (childXmlSchemaAny != null)
+                        {
+                            if (schemerComplexTypeElementEditorParent != null)
+                            {
+                                schemerComplexTypeElementEditorParent.AddChildAny(childXmlSchemaAny);
+                            }
                         }
                     }
                 }

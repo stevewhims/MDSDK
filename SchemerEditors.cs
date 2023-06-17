@@ -85,6 +85,8 @@ namespace MDSDK
         protected Collection<ChildElementAdapter>? _childElementAdapters = null;
         protected SchemerComplexTypeElementEditor? _parent = null;
 
+        protected XmlSchemaAny? _childXmlSchemaAny = null;
+
         public SchemerComplexTypeElementEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
         {
             this._xmlSchemaElement = xmlSchemaElement;
@@ -109,6 +111,11 @@ namespace MDSDK
             this._childElementAdapters!.Add(new ChildElementAdapter(xmlSchemaElementThatIsAChildOfThis));
         }
 
+        public void AddChildAny(XmlSchemaAny childXmlSchemaAny)
+        {
+            this._childXmlSchemaAny = childXmlSchemaAny;
+        }
+
         // Methods that don't modify.
 
         public void PrintElementTree(int indentation = 0)
@@ -120,9 +127,9 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters!)
                 {
-                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
                     {
-                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.PrintElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.PrintElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
                     }
                     else
                     {
@@ -187,9 +194,9 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
                     {
-                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
                     }
                 }
             }
@@ -212,21 +219,22 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    //this.WriteIndent(numberOfCharsToIndent);
-                    //this.Write("<xs:element name=\"");
-                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
                     {
-                        this.WriteOpeningElementTag(childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis._xmlSchemaElement, ref numberOfCharsToIndent);
+                        this.WriteOpeningElementTag(childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis._xmlSchemaElement, ref numberOfCharsToIndent, false, true);
                     }
                     else
                     {
-                        //this.WriteLine(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name! + "\">");
-                        this.WriteOpeningElementTag(childElementAdapter.XmlSchemaElementThatIsAChildOfThis, ref numberOfCharsToIndent);
+                        this.WriteOpeningElementTag(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!, ref numberOfCharsToIndent);
                     }
                 }
             }
-        }
 
+            if (this._childXmlSchemaAny != null)
+            {
+                WriteAny(this._childXmlSchemaAny, ref numberOfCharsToIndent);
+            }
+        }
 
         public void Commit()
         {
@@ -234,9 +242,9 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
                     {
-                        childElementAdapter.schemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
                     }
                 }
             }

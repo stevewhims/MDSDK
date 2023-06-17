@@ -1180,6 +1180,11 @@ namespace MDSDKBase
             this.Write(indentation);
         }
 
+        public static void WriteIndentToString(int numberOfCharsToIndent, ref string text)
+        {
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) text += EditorBase.IndentationChar;
+        }
+
         public static void IncrementIndent(ref int numberOfCharsToIndent)
         {
             numberOfCharsToIndent += EditorBase.NumberOfCharsToIndentIncrement;
@@ -1276,7 +1281,7 @@ namespace MDSDKBase
 
         public void WriteBeginComplexTypeElement(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent)
         {
-            this.WriteOpeningElementTag(xmlSchemaElement, ref numberOfCharsToIndent);
+            this.WriteOpeningElementTag(xmlSchemaElement, ref numberOfCharsToIndent, true);
             EditorBase.IncrementIndent(ref numberOfCharsToIndent);
 
             // Opening complexType tag.
@@ -1290,23 +1295,101 @@ namespace MDSDKBase
             EditorBase.IncrementIndent(ref numberOfCharsToIndent);
         }
 
-        public void WriteOpeningElementTag(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent)
+        public void WriteMaxOccursAttribute(XmlSchemaParticle xmlSchemaParticle, ref string attributes, int numberOfCharsToIndent)
+        {
+            if (xmlSchemaParticle.MaxOccurs != 1)
+            {
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "maxOccurs=\"" + xmlSchemaParticle.MaxOccursString + "\"";
+            }
+        }
+
+        public void WriteMinOccursAttribute(XmlSchemaParticle xmlSchemaParticle, ref string attributes, int numberOfCharsToIndent)
+        {
+            if (xmlSchemaParticle.MinOccurs != 1)
+            {
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "minOccurs=\"" + xmlSchemaParticle.MinOccursString + "\"";
+            }
+        }
+
+        public void WriteOpeningElementTag(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent, bool leaveOpen = false, bool isElided = false)
         {
             // Opening element tag.
             this.WriteIndent(numberOfCharsToIndent);
             this.Write("<xs:element name=\"" + xmlSchemaElement.Name + "\"");
-            if (xmlSchemaElement.MinOccurs == 0)
+
+            string attributes = string.Empty;
+
+            this.WriteMinOccursAttribute(xmlSchemaElement, ref attributes, numberOfCharsToIndent);
+
+            if (xmlSchemaElement.SchemaTypeName.Name != string.Empty)
             {
-                this.WriteLine("");
-                this.WriteIndent(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement);
-                this.WriteLine("minOccurs=\"0\"");
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "type=\"" + xmlSchemaElement.SchemaTypeName.Name + "\"";
+            }
+
+            if (isElided)
+            {
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "...";
+            }
+
+            if (attributes != string.Empty)
+            {
+                this.WriteLine();
+                this.WriteLine(attributes);
                 this.WriteIndent(numberOfCharsToIndent + 1);
+            }
+
+            if (leaveOpen)
+            {
                 this.WriteLine(">");
             }
             else
             {
-                this.WriteLine(">");
+                this.WriteLine("/>");
             }
+        }
+
+        public void WriteAny(XmlSchemaAny xmlSchemaAny, ref int numberOfCharsToIndent)
+        {
+            // Opening element tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.Write("<xs:any");
+
+            string attributes = string.Empty;
+
+            if (xmlSchemaAny.ProcessContents != XmlSchemaContentProcessing.None)
+            {
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "processContents=\"" + xmlSchemaAny.ProcessContents.ToString().ToLower() + "\"";
+            }
+
+            this.WriteMinOccursAttribute(xmlSchemaAny, ref attributes, numberOfCharsToIndent);
+
+            this.WriteMaxOccursAttribute(xmlSchemaAny, ref attributes, numberOfCharsToIndent);
+
+            if (xmlSchemaAny.Namespace != "##any")
+            {
+                if (attributes != string.Empty) attributes += Environment.NewLine;
+                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                attributes += "namespace=\"" + xmlSchemaAny.Namespace + "\"";
+            }
+
+            if (attributes != string.Empty)
+            {
+                this.WriteLine();
+                this.WriteLine(attributes);
+                this.WriteIndent(numberOfCharsToIndent + 1);
+            }
+
+            this.WriteLine("/>");
         }
 
         public void WriteEndComplexTypeElement(ref int numberOfCharsToIndent)
