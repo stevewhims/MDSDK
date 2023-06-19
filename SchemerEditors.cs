@@ -1,6 +1,7 @@
 ﻿using MDSDK;
 using MDSDKBase;
 using MDSDKDerived;
+using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -118,7 +119,7 @@ namespace MDSDK
 
         // Methods that don't modify.
 
-        public void PrintElementTree(int indentation = 0)
+        public void ConsoleWriteElementTree(int indentation = 0)
         {
             ProgramBase.ConsoleWriteIndent(indentation);
             ProgramBase.ConsoleWrite(this.XmlSchemaElementName + " element", ConsoleWriteStyle.Highlight);
@@ -129,7 +130,7 @@ namespace MDSDK
                 {
                     if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
                     {
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.PrintElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.ConsoleWriteElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
                     }
                     else
                     {
@@ -163,7 +164,7 @@ namespace MDSDK
             }
 
             this.WriteBeginYamlFrontmatter();
-            this.WriteYamlFrontmatterTitle(this.XmlSchemaElementName + " element");
+            this.WriteYamlFrontmatterTitle(this.RenderTitlePlusElement());
 
             this.WriteYamlFrontmatterDescription("TBD");
 
@@ -178,13 +179,20 @@ namespace MDSDK
             this.WriteYamlFrontmatterApiLocation(string.Empty);
             this.WriteEndYamlFrontmatter();
 
-            this.WriteSectionHeading(1, this.XmlSchemaElementName!);
+            this.WriteSectionHeading(1, this.RenderTitlePlusElement());
+            if (schemerElementExistingTopic != null)
+            {
+                this.WriteLine(schemerElementExistingTopic!.Description!);
+                this.WriteLine();
+            }
 
             this.WriteBeginSyntax();
             this.GenerateSyntax();
             this.WriteEndSyntax();
 
-            this.WriteSectionHeadingChildElements();
+            this.GenerateParentElementsSection();
+
+            this.GenerateChildElementsSection();
 
             this.WriteSectionHeadingRemarks();
 
@@ -202,7 +210,7 @@ namespace MDSDK
             }
         }
 
-        public void GenerateSyntax()
+        private void GenerateSyntax()
         {
             int numberOfCharsToIndent = 0;
 
@@ -213,7 +221,7 @@ namespace MDSDK
             WriteEndComplexTypeElement(ref numberOfCharsToIndent);
         }
 
-        public void GenerateSyntaxForImmediateChildren(ref int numberOfCharsToIndent)
+        private void GenerateSyntaxForImmediateChildren(ref int numberOfCharsToIndent)
         {
             if (this._childElementAdapters != null)
             {
@@ -233,6 +241,87 @@ namespace MDSDK
             if (this._childXmlSchemaAny != null)
             {
                 WriteAny(this._childXmlSchemaAny, ref numberOfCharsToIndent);
+            }
+        }
+
+        private void GenerateParentElementsSection()
+        {
+            if (this._parent != null)
+            {
+                this.WriteSectionHeadingParentElements();
+
+                this.WriteBulletPoint(EditorBase.RenderMarkdownLink(this._parent.RenderTitle(), @"./" + this._parent.FileInfo!.Name));
+            }
+        }
+
+        private string RenderTitle()
+        {
+            if (this._parent != null)
+            {
+                return String.Format("{0} ({1})", this.XmlSchemaElementName!, this._parent.XmlSchemaElementName!);
+            }
+            else
+            {
+                return this.XmlSchemaElementName!;
+            }
+        }
+
+        private string RenderTitlePlusElement()
+        {
+            return this.RenderTitle() + " element";
+        }
+
+        private void GenerateChildElementsSection()
+        {
+            if (this._childElementAdapters != null)
+            {
+                this.WriteSectionHeadingChildElements();
+
+                this.GenerateTableForImmediateChildren();
+
+                this.GenerateSectionsForImmediateChildrenOfSimpleType();
+            }
+        }
+
+        private void GenerateTableForImmediateChildren()
+        {
+            var columnHeadings = new List<string>() { "Element", "Type", "Description" };
+            var rows = new List<TableRow>();
+
+            foreach (var childElementAdapter in this._childElementAdapters!)
+            {
+                string? elementCell = string.Empty;
+                string? typeCell = string.Empty;
+                if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                {
+                    elementCell = EditorBase.RenderMarkdownLink(
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElementName!,
+                        @"./" + childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.FileInfo!.Name);
+                }
+                else
+                {
+                    elementCell = EditorBase.RenderMarkdownLink(
+                        childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!,
+                        @"#" + childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!.ToLower());
+                    typeCell = childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.SchemaTypeName.Name;
+                }
+                var rowCells = new List<string>() { elementCell!, typeCell, "TBD" };
+                var row = new TableRow(rowCells);
+                rows.Add(row);
+            }
+
+            var table = new Table(columnHeadings, rows);
+            this.WriteLine(table.RenderAsMarkdown());
+        }
+
+        private void GenerateSectionsForImmediateChildrenOfSimpleType()
+        {
+            foreach (var childElementAdapter in this._childElementAdapters!)
+            {
+                if (childElementAdapter.XmlSchemaElementThatIsAChildOfThis != null)
+                {
+                    this.WriteSectionHeading(3, childElementAdapter.XmlSchemaElementThatIsAChildOfThis.Name!);
+                }
             }
         }
 

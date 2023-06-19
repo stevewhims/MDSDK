@@ -57,7 +57,7 @@ namespace MDSDK
         private static Regex TableRowRegex = new Regex(@"\|.*\|", RegexOptions.Compiled);
         private static Regex TableCellRegex = new Regex(@"\|[^\|]*", RegexOptions.Compiled);
 
-        private Table(List<string>? columnHeadings = null, List<TableRow>? rows = null, int firstLineNumberOneBased = -1)
+        public Table(List<string>? columnHeadings = null, List<TableRow>? rows = null, int firstLineNumberOneBased = -1)
         {
             this.ColumnHeadings = columnHeadings ?? new List<string>();
             this.Rows = rows ?? new List<TableRow>();

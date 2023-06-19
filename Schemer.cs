@@ -104,7 +104,7 @@ namespace MDSDK
 
                 ProgramBase.ConsoleWrite(string.Empty);
                 ProgramBase.ConsoleWrite("Printing out tree of Editors...");
-                this._schemerComplexTypeElementEditorRoot!.PrintElementTree();
+                this._schemerComplexTypeElementEditorRoot!.ConsoleWriteElementTree();
             }
             catch (Exception e)
             {

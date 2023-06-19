@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30011.22
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E6FE30A9-8C14-4D46-A2C6-4DE3D52588FB}"
 	ProjectSection(SolutionItems) = preProject
@@ -9,10 +9,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		CommonModelsWin32.cs = CommonModelsWin32.cs
 		configuration.txt = configuration.txt
 		EditorBase.cs = EditorBase.cs
+		EditorObjectModel.cs = EditorObjectModel.cs
 		ExampleCode.cs = ExampleCode.cs
 		GitProcess.cs = GitProcess.cs
 		ProgramBase.cs = ProgramBase.cs
 		README.md = README.md
+		Schemer.cs = Schemer.cs
+		SchemerEditors.cs = SchemerEditors.cs
 		Table.cs = Table.cs
 		TODO.txt = TODO.txt
 		Win32APIReferenceBuiltTopicsLexer.cs = Win32APIReferenceBuiltTopicsLexer.cs
