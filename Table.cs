@@ -31,7 +31,27 @@ namespace MDSDK
 
         public TableRow(List<string> rowCells)
         {
-            this.RowCells = rowCells;
+            var sanitizedRowCells = new List<string>();
+            foreach (string cell in rowCells)
+            {
+                string trimmedCell = cell.Trim();
+
+                while (trimmedCell.EndsWith(@"<br/>") || trimmedCell.EndsWith(@"<br>"))
+                {
+                    if (trimmedCell.EndsWith(@"<br/>"))
+                    {
+                        trimmedCell = trimmedCell.Substring(0, trimmedCell.LastIndexOf(@"<br/>"));
+                    }
+                    if (trimmedCell.EndsWith(@"<br>"))
+                    {
+                        trimmedCell = trimmedCell.Substring(0, trimmedCell.LastIndexOf(@"<br>"));
+                    }
+                    trimmedCell = trimmedCell.Trim();
+                }
+
+                sanitizedRowCells.Add(trimmedCell);
+            }
+            this.RowCells = sanitizedRowCells;
         }
     }
 

@@ -216,6 +216,10 @@ namespace MDSDK
             }
 
             this.WriteSectionHeadingRequirements();
+            if (schemerElementExistingTopicEditor is not null)
+            {
+                this.WriteRequirements(schemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable!);
+            }
 
             if (this._childElementAdapters is not null)
             {

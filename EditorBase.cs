@@ -130,17 +130,17 @@ namespace MDSDKBase
             // TODO: this needs implementing more fully. It's currently focused on topics for xsd elements.
 
             int ix = 0;
-            var editorBaseTopicSection = EditorObjectModelTopicSection.None;
+            var editorBaseTopicSection = EditorObjectModelTopicSection.NothingFound;
             while (ix < this.fileLines.Count)
             {
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 bool moveToNextLine = true;
                 switch (editorBaseTopicSection)
                 {
-                    case EditorObjectModelTopicSection.None:
+                    case EditorObjectModelTopicSection.NothingFound:
                         if (eachLineTrimmed == "---")
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.YamlFrontmatter;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.YamlFrontmatterFound;
                         }
                         else
                         {
@@ -149,17 +149,17 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.YamlFrontmatter:
+                    case EditorObjectModelTopicSection.YamlFrontmatterFound:
                         if (eachLineTrimmed == "---")
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.AfterYamlFrontmatter;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.ContentAfterYamlFrontmatterFound;
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.AfterYamlFrontmatter:
+                    case EditorObjectModelTopicSection.ContentAfterYamlFrontmatterFound:
                         if (eachLineTrimmed.StartsWith("# "))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Description;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.DescriptionFound;
                         }
                         else if (eachLineTrimmed != string.Empty)
                         {
@@ -168,14 +168,14 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.Description:
+                    case EditorObjectModelTopicSection.DescriptionFound:
                         if (eachLineTrimmed.StartsWith("```"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Syntax;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.SyntaxFound;
                         }
                         else if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Heading;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
                             moveToNextLine = false;
                         }
                         else
@@ -184,29 +184,29 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.Syntax:
+                    case EditorObjectModelTopicSection.SyntaxFound:
                         if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Heading;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
                             moveToNextLine = false;
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.Heading:
+                    case EditorObjectModelTopicSection.HeadingFound:
                         if (eachLineTrimmed == "## Remarks")
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Remarks;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.RemarksFound;
                         }
                         else if (eachLineTrimmed == "## Requirements")
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Remarks;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.RequirementsFound;
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.Remarks:
+                    case EditorObjectModelTopicSection.RemarksFound:
                         if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.Heading;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
                             moveToNextLine = false;
                         }
                         else
@@ -215,8 +215,10 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.Requirements:
+                    case EditorObjectModelTopicSection.RequirementsFound:
                         Table? requirementsTable = Table.GetNextTable(this.FileInfo!.Name, this.fileLines, ix);
+                        this.EditorObjectModel.SetRequirementsTable(requirementsTable);
+                        editorBaseTopicSection = EditorObjectModelTopicSection.EndFound;
                         break;
 
                     default:
@@ -1290,12 +1292,12 @@ namespace MDSDKBase
                 streamWriter.Write(text);
             }
         }
-        
+
         public void Write(TopicLines topicLines)
         {
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                foreach(var line in topicLines)
+                foreach (var line in topicLines)
                 {
                     streamWriter.WriteLine(line);
                 }
@@ -1307,7 +1309,7 @@ namespace MDSDKBase
             this.WriteSectionHeadingRemarks();
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                foreach(var line in topicLines)
+                foreach (var line in topicLines)
                 {
                     streamWriter.WriteLine(line);
                 }
@@ -1315,6 +1317,15 @@ namespace MDSDKBase
             if (topicLines.Count == 0)
             {
                 this.WriteLine();
+            }
+        }
+
+        public void WriteRequirements(Table? requirementsTable)
+        {
+            this.WriteLine();
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                streamWriter.WriteLine(requirementsTable?.Render());
             }
         }
 

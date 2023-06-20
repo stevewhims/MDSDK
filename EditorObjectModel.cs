@@ -18,14 +18,15 @@ namespace MDSDKBase
 {
     internal enum EditorObjectModelTopicSection
     {
-        None,
-        YamlFrontmatter,
-        AfterYamlFrontmatter,
-        Description,
-        Syntax,
-        Heading,
-        Remarks,
-        Requirements
+        NothingFound,
+        YamlFrontmatterFound,
+        ContentAfterYamlFrontmatterFound,
+        DescriptionFound,
+        SyntaxFound,
+        HeadingFound,
+        RemarksFound,
+        RequirementsFound,
+        EndFound
     }
 
     internal class TopicLines : List<string>
@@ -45,6 +46,7 @@ namespace MDSDKBase
         public EditorObjectModelYamlFrontmatter? YamlFrontmatter { get; private set; }
         public TopicLines Description { get; private set; }
         public TopicLines Remarks { get; private set; }
+        public Table? RequirementsTable { get; private set; }
 
         public EditorObjectModel()
         {
@@ -61,6 +63,11 @@ namespace MDSDKBase
         public void AppendLineToRemarks(string line)
         {
             this.Remarks.AppendLine(line);
+        }
+
+        public void SetRequirementsTable(Table? requirementsTable)
+        {
+            this.RequirementsTable = requirementsTable;
         }
     }
 
