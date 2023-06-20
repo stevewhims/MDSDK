@@ -115,7 +115,7 @@ namespace MDSDK
             this.TopicUrl = topicUrl;
         }
 
-        public string? MarkdownLink()
+        public string? Hyperlink()
         {
             return $"[{this.Name}]({this.TopicUrl})";
         }
@@ -295,9 +295,9 @@ namespace MDSDK
             get
             {
                 string requirements = "Introduced in Windows " + this.SdkVersionIntroducedIn;
-                if (this.SdkVersionRemovedIn != null)
+                if (this.SdkVersionRemovedIn is not null)
                 {
-                    if (this.ModuleMovedTo != null)
+                    if (this.ModuleMovedTo is not null)
                     {
                         requirements += ". Moved to " + this.ModuleMovedTo.Name + " in Windows " + this.SdkVersionRemovedIn;
                     }
@@ -323,9 +323,9 @@ namespace MDSDK
     //        get
     //        {
     //            string requirements = "Introduced into " + this.ModuleName + " in Windows " + this.SdkVersionIntroducedIn;
-    //            if (this.SdkVersionRemovedIn != null)
+    //            if (this.SdkVersionRemovedIn is not null)
     //            {
-    //                if (this.ModuleMovedTo != null)
+    //                if (this.ModuleMovedTo is not null)
     //                {
     //                    requirements += ". Moved to " + this.ModuleMovedTo.Name + " in Windows " + this.SdkVersionRemovedIn;
     //                }
@@ -430,7 +430,7 @@ namespace MDSDK
     //                    initialCharGroupKey = "_";
     //                }
     //                InitialCharGroup initialCharGroup = initialCharGroups.Find(found => found.Name == initialCharGroupKey);
-    //                if (initialCharGroup == null)
+    //                if (initialCharGroup is null)
     //                {
     //                    initialCharGroup = new InitialCharGroup(initialCharGroupKey);
     //                    initialCharGroups.Add(initialCharGroup);
@@ -470,7 +470,7 @@ namespace MDSDK
             foreach (Module module in this.Modules)
             {
                 FunctionWin32Grouped? apiToAdd = module.FindApi(apiName);
-                if (apiToAdd != null)
+                if (apiToAdd is not null)
                 {
                     return module;
                 }
@@ -488,7 +488,7 @@ namespace MDSDK
 			}
 
 			Module module = this.Modules.Find(found => found.Name == api.Binary.Name);
-			if (module == null)
+			if (module is null)
 			{
 				module = new Module(api.Binary.Name, isApiSet);
 				this.Modules.Add(module);
@@ -496,7 +496,7 @@ namespace MDSDK
 
 			FunctionWin32Grouped apiToAdd = module.FindApi(api.Name);
 
-			if (apiToAdd == null)
+			if (apiToAdd is null)
 			{
 				module.AddApi(api.Name, sdkVersion, functionWin32Id);
 			}

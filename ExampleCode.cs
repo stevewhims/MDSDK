@@ -12,7 +12,7 @@
 //    Editor editor = EditorBase.GetEditorForTopicFileName(projectDirectoryInfo, "hardware-support-for-direct3d-12-1-formats.md");
 
 //    Table firstTable = editor.GetFirstTable();
-//    if (firstTable != null)
+//    if (firstTable is not null)
 //    {
 //        firstTable.RemoveRowNumberOneBased(firstTable.RowCount);
 //        firstTable.RemoveRedundantColumns(@"\#", @"Format ( DXGI\_FORMAT\_\* )");
@@ -25,7 +25,7 @@
 //        {
 //            string heading = $"{Environment.NewLine}## DXGI_FORMAT_{skippedCellsPerRow[tableIndex][1]} ({skippedCellsPerRow[tableIndex][0]})";
 //            refactoredTables.Add(heading);
-//            refactoredTables.Add(tablePerRow[tableIndex].RenderAsMarkdown());
+//            refactoredTables.Add(tablePerRow[tableIndex].Render());
 //        }
 //    }
 //}

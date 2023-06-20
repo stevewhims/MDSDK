@@ -46,14 +46,14 @@ namespace MDSDK
         public Schemer(string topicsRootPath, string topicsFolderName, string schemaName, string xsdFileName)
         {
             SchemerEditorBase.DirectoryInfoForExistingTopics = new DirectoryInfo(topicsRootPath + topicsFolderName);
-            SchemerEditorBase.DirectoryInfoForGeneratedTopics = new DirectoryInfo(topicsRootPath + topicsFolderName + @"_gen");
+            SchemerEditorBase.DirectoryInfoForNewTopics = new DirectoryInfo(topicsRootPath + topicsFolderName + @"_gen");
             SchemerEditorBase.SchemaName = schemaName;
             this._xsdFileName = xsdFileName;
         }
 
         public void DebugInit()
         {
-            SchemerEditorBase.DirectoryInfoForGeneratedTopics!.Delete(true);
+            SchemerEditorBase.DirectoryInfoForNewTopics!.Delete(true);
         }
 
         /// <summary>
@@ -72,14 +72,14 @@ namespace MDSDK
                 throw new MDSDKException();
             }
 
-            if (SchemerEditorBase.DirectoryInfoForGeneratedTopics!.Exists)
+            if (SchemerEditorBase.DirectoryInfoForNewTopics!.Exists)
             {
-                ProgramBase.ConsoleWrite(SchemerEditorBase.DirectoryInfoForGeneratedTopics.FullName + " already exists.", ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite(SchemerEditorBase.DirectoryInfoForNewTopics.FullName + " already exists.", ConsoleWriteStyle.Error);
                 throw new MDSDKException();
             }
             else
             {
-                SchemerEditorBase.DirectoryInfoForGeneratedTopics.Create();
+                SchemerEditorBase.DirectoryInfoForNewTopics.Create();
             }
 
             try
@@ -114,10 +114,10 @@ namespace MDSDK
 
         private void SurveyElementRecursive(SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorParent, XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, int indentation = 0)
         {
-            if (this._schemerElementsLandingPageEditor == null)
+            if (this._schemerElementsLandingPageEditor is null)
             {
-                FileInfo fileInfoGenerated = SchemerElementsLandingPageEditor.FormatFileInfo(true);
-                this._schemerElementsLandingPageEditor = new SchemerElementsLandingPageEditor(fileInfoGenerated, xmlSchemaElement);
+                FileInfo fileInfoForNewTopic = SchemerElementsLandingPageEditor.FormatFileInfo(true);
+                this._schemerElementsLandingPageEditor = new SchemerElementsLandingPageEditor(fileInfoForNewTopic, xmlSchemaElement);
             }
 
             SchemerComplexTypeElementEditor? schemerComplexTypeElementEditor = null;
@@ -128,7 +128,7 @@ namespace MDSDK
             ProgramBase.ConsoleWrite(" (", ConsoleWriteStyle.Default, 0);
 
             XmlSchemaComplexType? xmlSchemaComplexType = xmlSchemaElement.ElementSchemaType as XmlSchemaComplexType;
-            if (xmlSchemaComplexType != null)
+            if (xmlSchemaComplexType is not null)
             {
                 if (xmlSchemaComplexType.ContentType != XmlSchemaContentType.ElementOnly)
                 {
@@ -137,26 +137,26 @@ namespace MDSDK
                 }
 
                 XmlSchemaSequence? xmlSchemaSequence = xmlSchemaComplexType.ContentTypeParticle as XmlSchemaSequence;
-                if (xmlSchemaSequence != null)
+                if (xmlSchemaSequence is not null)
                 {
                     foreach (var item in xmlSchemaSequence.Items)
                     {
                         XmlSchemaElement? childXmlSchemaElement = item as XmlSchemaElement;
-                        if (childXmlSchemaElement != null)
+                        if (childXmlSchemaElement is not null)
                         {
-                            if (schemerComplexTypeElementEditor == null)
+                            if (schemerComplexTypeElementEditor is null)
                             {
-                                FileInfo fileInfoGenerated = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, xmlSchemaElement, true);
-                                ProgramBase.ConsoleWrite("will create " + fileInfoGenerated.FullName + ")");
+                                FileInfo fileInfoForNewTopic = SchemerEditorBase.GetFileInfoForNewTopic(xmlSchemaElementParent, xmlSchemaElement);
+                                ProgramBase.ConsoleWrite("will create " + fileInfoForNewTopic.FullName + ")");
 
                                 // Create a new element topic, and add it to its parent topic's child element adapters collection.
-                                schemerComplexTypeElementEditor = new SchemerComplexTypeElementEditor(fileInfoGenerated, xmlSchemaElement);
-                                if (schemerComplexTypeElementEditorParent != null)
+                                schemerComplexTypeElementEditor = new SchemerComplexTypeElementEditor(fileInfoForNewTopic, xmlSchemaElement);
+                                if (schemerComplexTypeElementEditorParent is not null)
                                 {
                                     schemerComplexTypeElementEditorParent.AddChildElementAdapter(schemerComplexTypeElementEditor);
                                 }
 
-                                if (this._schemerComplexTypeElementEditorRoot == null)
+                                if (this._schemerComplexTypeElementEditorRoot is null)
                                 {
                                     this._schemerComplexTypeElementEditorRoot = schemerComplexTypeElementEditor;
                                 }
@@ -166,9 +166,9 @@ namespace MDSDK
                         }
 
                         XmlSchemaAny? childXmlSchemaAny = item as XmlSchemaAny;
-                        if (childXmlSchemaAny != null)
+                        if (childXmlSchemaAny is not null)
                         {
-                            if (schemerComplexTypeElementEditorParent != null)
+                            if (schemerComplexTypeElementEditorParent is not null)
                             {
                                 schemerComplexTypeElementEditorParent.AddChildAny(childXmlSchemaAny);
                             }
@@ -177,14 +177,14 @@ namespace MDSDK
                 }
             }
 
-            if (schemerComplexTypeElementEditor == null)
+            if (schemerComplexTypeElementEditor is null)
             {
-                if (schemerComplexTypeElementEditorParent != null)
+                if (schemerComplexTypeElementEditorParent is not null)
                 {
                     schemerComplexTypeElementEditorParent.AddChildElementAdapter(xmlSchemaElement);
                 }
 
-                FileInfo fileInfo = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, xmlSchemaElement, false);
+                FileInfo fileInfo = SchemerEditorBase.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
                 if (fileInfo.Exists)
                 {
                     ProgramBase.ConsoleWrite("will delete " + fileInfo.FullName + ")");

@@ -26,28 +26,38 @@ namespace MDSDK
         public SchemerEditorBase(FileInfo fileInfo, EditorBaseFileInfoExistenceRequirements fileInfoExistenceRequirements) : base(fileInfo, fileInfoExistenceRequirements) { }
 
         public static DirectoryInfo? DirectoryInfoForExistingTopics = null;
-        public static DirectoryInfo? DirectoryInfoForGeneratedTopics = null;
+        public static DirectoryInfo? DirectoryInfoForNewTopics = null;
         public static string? SchemaName = null;
 
-        public static FileInfo FormatFileInfo(XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, bool generated)
+        private static FileInfo Xxx(XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, bool isTopicNew)
         {
             string fileName = SchemerEditorBase.SchemaName!;
             fileName += "-" + xmlSchemaElement.Name!.ToLower();
-            if (xmlSchemaElementParent != null)
+            if (xmlSchemaElementParent is not null)
             {
                 fileName += "-" + xmlSchemaElementParent.Name!.ToLower();
             }
             fileName += "-element.md";
-            return new FileInfo((generated ? SchemerEditorBase.DirectoryInfoForGeneratedTopics!.FullName : SchemerEditorBase.DirectoryInfoForExistingTopics!.FullName) + @"\" + fileName);
+            return new FileInfo((isTopicNew ? SchemerEditorBase.DirectoryInfoForNewTopics!.FullName : SchemerEditorBase.DirectoryInfoForExistingTopics!.FullName) + @"\" + fileName);
+        }
+
+        public static FileInfo GetFileInfoForNewTopic(XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement)
+        {
+            return SchemerEditorBase.Xxx(xmlSchemaElementParent, xmlSchemaElement, true);
+        }
+
+        public static FileInfo GetFileInfoForExistingTopic(XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement)
+        {
+            return SchemerEditorBase.Xxx(xmlSchemaElementParent, xmlSchemaElement, false);
         }
     }
 
     /// <summary>
     /// Topic for an existing schema element.
     /// </summary>
-    internal class SchemerElementExistingTopic : SchemerEditorBase
+    internal class SchemerElementExistingTopicEditor : SchemerEditorBase
     {
-        public SchemerElementExistingTopic(FileInfo fileInfo) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustAlreadyExist) { }
+        public SchemerElementExistingTopicEditor(FileInfo fileInfo) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustAlreadyExist) { }
     }
 
     /// <summary>
@@ -62,11 +72,11 @@ namespace MDSDK
             this._xmlSchemaElementRoot = xmlSchemaElementRoot;
         }
 
-        public static FileInfo FormatFileInfo(bool generated)
+        public static FileInfo FormatFileInfo(bool isTopicNew)
         {
             string fileName = SchemerEditorBase.SchemaName!;
             fileName += "-elements.md";
-            return new FileInfo((generated ? SchemerEditorBase.DirectoryInfoForGeneratedTopics!.FullName : SchemerEditorBase.DirectoryInfoForExistingTopics!.FullName) + @"\" + fileName);
+            return new FileInfo((isTopicNew ? SchemerEditorBase.DirectoryInfoForNewTopics!.FullName : SchemerEditorBase.DirectoryInfoForExistingTopics!.FullName) + @"\" + fileName);
         }
 
         // Methods that don't modify.
@@ -80,8 +90,7 @@ namespace MDSDK
     /// </summary>
 	internal class SchemerComplexTypeElementEditor : SchemerEditorBase
     {
-        protected XmlSchemaElement _xmlSchemaElement;
-        public string? XmlSchemaElementName { get { return this._xmlSchemaElement.Name; } }
+        protected XmlSchemaElement XmlSchemaElement;
 
         protected Collection<ChildElementAdapter>? _childElementAdapters = null;
         protected SchemerComplexTypeElementEditor? _parent = null;
@@ -90,12 +99,12 @@ namespace MDSDK
 
         public SchemerComplexTypeElementEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
         {
-            this._xmlSchemaElement = xmlSchemaElement;
+            this.XmlSchemaElement = xmlSchemaElement;
         }
 
         public void AddChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
         {
-            if (this._childElementAdapters == null)
+            if (this._childElementAdapters is null)
             {
                 this._childElementAdapters = new Collection<ChildElementAdapter>();
             }
@@ -105,7 +114,7 @@ namespace MDSDK
 
         public void AddChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
         {
-            if (this._childElementAdapters == null)
+            if (this._childElementAdapters is null)
             {
                 this._childElementAdapters = new Collection<ChildElementAdapter>();
             }
@@ -122,13 +131,13 @@ namespace MDSDK
         public void ConsoleWriteElementTree(int indentation = 0)
         {
             ProgramBase.ConsoleWriteIndent(indentation);
-            ProgramBase.ConsoleWrite(this.XmlSchemaElementName + " element", ConsoleWriteStyle.Highlight);
+            ProgramBase.ConsoleWrite(this.XmlSchemaElement.Name + " element", ConsoleWriteStyle.Highlight);
 
-            if (this._childElementAdapters != null)
+            if (this._childElementAdapters is not null)
             {
                 foreach (var childElementAdapter in this._childElementAdapters!)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
                     {
                         childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.ConsoleWriteElementTree(indentation + ProgramBase.NumberOfCharsToIndentIncrement);
                     }
@@ -146,44 +155,51 @@ namespace MDSDK
 
         public void Generate()
         {
+            /// If this topic isn't the topic for the root element (so it has a parent), then grab the XmlSchemaElement that represents the parent's xsd element.
             XmlSchemaElement? xmlSchemaElementParent = null;
-            if (this._parent != null)
-            {
-                xmlSchemaElementParent = this._parent._xmlSchemaElement;
-            }
+            xmlSchemaElementParent = this._parent?.XmlSchemaElement;
 
-            FileInfo fileInfoPossiblyExisting = SchemerEditorBase.FormatFileInfo(xmlSchemaElementParent, this._xmlSchemaElement, false);
-            SchemerElementExistingTopic? schemerElementExistingTopic = null;
+            // Predict what the path and filename for this element's topic's would be if it already existed, and get a FileInfo for it.
+            FileInfo fileInfoPossiblyExisting = SchemerEditorBase.GetFileInfoForExistingTopic(xmlSchemaElementParent, this.XmlSchemaElement);
+
+            // If there *is* an existing topic for this element, then create an Editor for it.
+            SchemerElementExistingTopicEditor? schemerElementExistingTopicEditor = null;
             if (fileInfoPossiblyExisting.Exists)
             {
-                schemerElementExistingTopic = new SchemerElementExistingTopic(fileInfoPossiblyExisting);
+                schemerElementExistingTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExisting);
             }
             else
             {
-                ProgramBase.ConsoleWrite(fileInfoPossiblyExisting.FullName + " doesn't exist; nothing to mine.", ConsoleWriteStyle.Highlight);
+                ProgramBase.ConsoleWrite(fileInfoPossiblyExisting.FullName + " doesn't exist; nothing to mine.", ConsoleWriteStyle.Warning);
             }
 
             this.WriteBeginYamlFrontmatter();
             this.WriteYamlFrontmatterTitle(this.RenderTitlePlusElement());
 
-            this.WriteYamlFrontmatterDescription("TBD");
-
-            if (schemerElementExistingTopic != null) this.WriteYamlFrontmatterMsAssetId(schemerElementExistingTopic!.GetYamlMsAssetId());
+            if (schemerElementExistingTopicEditor is not null)
+            {
+                this.WriteYamlFrontmatterDescription(schemerElementExistingTopicEditor!.GetYamlDescription());
+            }
+            else
+            {
+                this.WriteYamlFrontmatterDescription(EditorBase.TBDSentenceString);
+            }
 
             this.WriteYamlFrontmatterMsTopicReference();
             this.WriteYamlFrontmatterMsDate();
             this.WriteYamlFrontmatterTopicTypeAPIRefKbSyntax();
-            this.WriteYamlFrontmatterApiName(this.XmlSchemaElementName!);
+            this.WriteYamlFrontmatterApiName(this.XmlSchemaElement.Name!);
             this.WriteYamlFrontmatterApiTypeSchema();
-
             this.WriteYamlFrontmatterApiLocation(string.Empty);
+
+            if (schemerElementExistingTopicEditor is not null) this.WriteYamlFrontmatterMsAssetId(schemerElementExistingTopicEditor!.GetYamlMsAssetId());
+
             this.WriteEndYamlFrontmatter();
 
             this.WriteSectionHeading(1, this.RenderTitlePlusElement());
-            if (schemerElementExistingTopic != null)
+            if (schemerElementExistingTopicEditor is not null)
             {
-                this.WriteLine(schemerElementExistingTopic!.Description!);
-                this.WriteLine();
+                this.Write(schemerElementExistingTopicEditor!.EditorObjectModel.Description!);
             }
 
             this.WriteBeginSyntax();
@@ -194,15 +210,18 @@ namespace MDSDK
 
             this.GenerateChildElementsSection();
 
-            this.WriteSectionHeadingRemarks();
+            if (schemerElementExistingTopicEditor is not null)
+            {
+                this.WriteRemarks(schemerElementExistingTopicEditor!.EditorObjectModel.Remarks!);
+            }
 
             this.WriteSectionHeadingRequirements();
 
-            if (this._childElementAdapters != null)
+            if (this._childElementAdapters is not null)
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
                     {
                         childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
                     }
@@ -214,7 +233,7 @@ namespace MDSDK
         {
             int numberOfCharsToIndent = 0;
 
-            this.WriteBeginComplexTypeElement(this._xmlSchemaElement, ref numberOfCharsToIndent);
+            this.WriteBeginComplexTypeElement(this.XmlSchemaElement, ref numberOfCharsToIndent);
 
             this.GenerateSyntaxForImmediateChildren(ref numberOfCharsToIndent);
 
@@ -223,13 +242,13 @@ namespace MDSDK
 
         private void GenerateSyntaxForImmediateChildren(ref int numberOfCharsToIndent)
         {
-            if (this._childElementAdapters != null)
+            if (this._childElementAdapters is not null)
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
                     {
-                        this.WriteOpeningElementTag(childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis._xmlSchemaElement, ref numberOfCharsToIndent, false, true);
+                        this.WriteOpeningElementTag(childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement, ref numberOfCharsToIndent, false, true);
                     }
                     else
                     {
@@ -238,7 +257,7 @@ namespace MDSDK
                 }
             }
 
-            if (this._childXmlSchemaAny != null)
+            if (this._childXmlSchemaAny is not null)
             {
                 WriteAny(this._childXmlSchemaAny, ref numberOfCharsToIndent);
             }
@@ -246,23 +265,30 @@ namespace MDSDK
 
         private void GenerateParentElementsSection()
         {
-            if (this._parent != null)
-            {
-                this.WriteSectionHeadingParentElements();
+            this.WriteSectionHeadingParentElements();
+            this.WriteLine();
 
-                this.WriteBulletPoint(EditorBase.RenderMarkdownLink(this._parent.RenderTitle(), @"./" + this._parent.FileInfo!.Name));
+            if (this._parent is not null)
+            {
+                this.WriteBulletPoint(EditorBase.RenderHyperlink(this._parent.RenderTitle(), @"./" + this._parent.FileInfo!.Name));
             }
+            else
+            {
+                this.WriteLine(EditorBase.NoneSentenceString);
+            }
+
+            this.WriteLine();
         }
 
         private string RenderTitle()
         {
-            if (this._parent != null)
+            if (this._parent is not null)
             {
-                return String.Format("{0} ({1})", this.XmlSchemaElementName!, this._parent.XmlSchemaElementName!);
+                return String.Format("{0} ({1})", this.XmlSchemaElement.Name!, this._parent.XmlSchemaElement.Name!);
             }
             else
             {
-                return this.XmlSchemaElementName!;
+                return this.XmlSchemaElement.Name!;
             }
         }
 
@@ -273,9 +299,10 @@ namespace MDSDK
 
         private void GenerateChildElementsSection()
         {
-            if (this._childElementAdapters != null)
+            if (this._childElementAdapters is not null)
             {
                 this.WriteSectionHeadingChildElements();
+                this.WriteLine();
 
                 this.GenerateTableForImmediateChildren();
 
@@ -292,46 +319,48 @@ namespace MDSDK
             {
                 string? elementCell = string.Empty;
                 string? typeCell = string.Empty;
-                if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
                 {
-                    elementCell = EditorBase.RenderMarkdownLink(
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElementName!,
+                    elementCell = EditorBase.RenderHyperlink(
+                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement.Name!,
                         @"./" + childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.FileInfo!.Name);
                 }
                 else
                 {
-                    elementCell = EditorBase.RenderMarkdownLink(
+                    elementCell = EditorBase.RenderHyperlink(
                         childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!,
                         @"#" + childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!.ToLower());
                     typeCell = childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.SchemaTypeName.Name;
                 }
-                var rowCells = new List<string>() { elementCell!, typeCell, "TBD" };
+                var rowCells = new List<string>() { elementCell!, typeCell, EditorBase.TBDSentenceString };
                 var row = new TableRow(rowCells);
                 rows.Add(row);
             }
 
             var table = new Table(columnHeadings, rows);
-            this.WriteLine(table.RenderAsMarkdown());
+            this.WriteLine(table.Render());
+            this.WriteLine();
         }
 
         private void GenerateSectionsForImmediateChildrenOfSimpleType()
         {
             foreach (var childElementAdapter in this._childElementAdapters!)
             {
-                if (childElementAdapter.XmlSchemaElementThatIsAChildOfThis != null)
+                if (childElementAdapter.XmlSchemaElementThatIsAChildOfThis is not null)
                 {
                     this.WriteSectionHeading(3, childElementAdapter.XmlSchemaElementThatIsAChildOfThis.Name!);
+                    this.WriteLine();
                 }
             }
         }
 
         public void Commit()
         {
-            if (this._childElementAdapters != null)
+            if (this._childElementAdapters is not null)
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis != null)
+                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
                     {
                         childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
                     }

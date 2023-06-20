@@ -50,7 +50,7 @@ namespace MDSDK
             ProgramBase.ConsoleWrite($" :: GITGITGIT{Environment.NewLine}", ConsoleWriteStyle.Default);
             using (var stageAndCommitProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
-                if (stageAndCommitProcess != null)
+                if (stageAndCommitProcess is not null)
                 {
                     stageAndCommitProcess.StandardInput.WriteLine("git add .");
                     stageAndCommitProcess.StandardInput.WriteLine($"git commit -a -m \"{ProgramBase.CommitMessage}\"");
@@ -72,7 +72,7 @@ namespace MDSDK
             ProgramBase.ConsoleWrite($" :: GITGITGIT{Environment.NewLine}", ConsoleWriteStyle.Default);
             using (var deletePersonalBranchProcess = Process.Start(GitProcess.ProcessStartInfo))
             {
-                if (deletePersonalBranchProcess != null)
+                if (deletePersonalBranchProcess is not null)
                 {
                     if (deleteRemoteBranch) deletePersonalBranchProcess.StandardInput.WriteLine($"git push origin --delete {ProgramBase.MyAlias}-{ProgramBase.BaseBranchName}/{ProgramBase.PersonalBranchName}");
                     deletePersonalBranchProcess.StandardInput.WriteLine("git checkout main");

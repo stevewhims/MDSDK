@@ -107,32 +107,32 @@ namespace MDSDK
             }
         }
 
-        public string RenderAsMarkdown()
+        public string Render()
         {
-            var markdown = new StringBuilder();
+            var rendered = new StringBuilder();
 
-            markdown.Append("|");
+            rendered.Append("|");
             foreach (var columnHeading in this.ColumnHeadings)
             {
-                markdown.Append($" {columnHeading} |");
+                rendered.Append($" {columnHeading} |");
             }
 
-            markdown.Append($"{Environment.NewLine}|");
+            rendered.Append($"{Environment.NewLine}|");
             foreach (var columnHeading in this.ColumnHeadings)
             {
-                markdown.Append($" - |");
+                rendered.Append($" - |");
             }
 
             foreach (TableRow row in this.Rows)
             {
-                markdown.Append($"{Environment.NewLine}|");
+                rendered.Append($"{Environment.NewLine}|");
                 foreach (var cell in row.RowCells)
                 {
-                    markdown.Append($" {cell} |");
+                    rendered.Append($" {cell} |");
                 }
             }
 
-            return markdown.ToString();
+            return rendered.ToString();
         }
 
         public (List<Table> tablePerRow, List<List<string>> skippedCellsPerRow) SliceHorizontally(List<string> columnHeadings, int firstColumnIndexZeroBased = 0)
@@ -180,7 +180,7 @@ namespace MDSDK
                 {
                     case TableParseState.NothingFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
-                        if (currentTableRowString != null)
+                        if (currentTableRowString is not null)
                         {
                             tableParseState = TableParseState.HeaderColumnHeadingsRowFound;
                             table = new Table(Table.RowToCells(filename, currentTableRowString), null, currentLineNumberOneBased);
@@ -188,7 +188,7 @@ namespace MDSDK
                         break;
                     case TableParseState.HeaderColumnHeadingsRowFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
-                        if (currentTableRowString != null)
+                        if (currentTableRowString is not null)
                         {
                             tableParseState = TableParseState.HeaderUnderlineRowFound;
                             table!.ConfirmCellCountsMatch(filename, currentTableRowString);
@@ -201,7 +201,7 @@ namespace MDSDK
                         break;
                     case TableParseState.HeaderUnderlineRowFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
-                        if (currentTableRowString != null)
+                        if (currentTableRowString is not null)
                         {
                             tableParseState = TableParseState.BodyFound;
                             table!.AddRowIfCellCountsMatch(filename, currentTableRowString);
@@ -214,7 +214,7 @@ namespace MDSDK
                         break;
                     case TableParseState.BodyFound:
                         currentTableRowString = Table.LineToTableRow(eachLineTrimmed);
-                        if (currentTableRowString != null)
+                        if (currentTableRowString is not null)
                         {
                             table!.AddRowIfCellCountsMatch(filename, currentTableRowString);
                         }

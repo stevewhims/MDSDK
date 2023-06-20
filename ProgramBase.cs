@@ -319,7 +319,7 @@ namespace MDSDKBase
                 }
             }
 
-            if (ProgramBase.MyContentReposFolderDirectoryInfo == null)
+            if (ProgramBase.MyContentReposFolderDirectoryInfo is null)
             {
                 ProgramBase.ConsoleWrite("MISSING CONTENT REPOS FOLDER CONFIG INFO. Your configuration.txt needs to contain something like: my_content_repos_folder %USERPROFILE%\\source\\repos. This is the folder on your local machine containing your cloned content repos.", ConsoleWriteStyle.Error);
                 throw new MDSDKException();
@@ -346,7 +346,7 @@ namespace MDSDKBase
         /// <param name="notFoundMessage">Optional message to override the default file-not-found message.</param>
         public static void LoadTextFileIntoStringList(string fileName, ref List<string> listToAddTo, string? notFoundMessage = null)
         {
-            if (listToAddTo == null) listToAddTo = new List<string>();
+            if (listToAddTo is null) listToAddTo = new List<string>();
 
             FileInfo fileInfo = new FileInfo(fileName);
             if (!fileInfo.Exists)
@@ -426,11 +426,11 @@ namespace MDSDKBase
                             }
                             if (containsTopicRids)
                             {
-                                if (docSetsToValidateAgainst[0].GetFileInfoForTopic(values[0]) == null)
+                                if (docSetsToValidateAgainst[0].GetFileInfoForTopic(values[0]) is null)
                                 {
                                     ProgramBase.NonexistentRidsInMappingsLog!.Add(docSetsToValidateAgainst[0].Description + " don't contain " + values[0]);
                                 }
-                                if (docSetsToValidateAgainst[1].GetFileInfoForTopic(values[1]) == null)
+                                if (docSetsToValidateAgainst[1].GetFileInfoForTopic(values[1]) is null)
                                 {
                                     ProgramBase.NonexistentRidsInMappingsLog!.Add(docSetsToValidateAgainst[1].Description + " don't contain " + values[1]);
                                 }
@@ -558,7 +558,7 @@ namespace MDSDKBase
         public FileInfo? GetFileInfoForTopicStub(string id)
         {
             string[] segments = id.Split('.');
-            if (segments == null || segments.Length != 2) return null;
+            if (segments is null || segments.Length != 2) return null;
 
             string project = segments[0];
             List<DirectoryInfo> directoryInfos = ProgramBase.ApiRefStubDirectoryInfo!.GetDirectories(project, SearchOption.TopDirectoryOnly).ToList();
@@ -588,7 +588,7 @@ namespace MDSDKBase
         public Editor? GetEditorForTopicStub(string id)
         {
             FileInfo? fileInfo = this.GetFileInfoForTopicStub(id);
-            if (fileInfo != null)
+            if (fileInfo is not null)
             {
                 return new Editor(fileInfo);
             }
@@ -711,7 +711,7 @@ namespace MDSDKBase
 
                 using (StreamWriter streamWriter = File.CreateText(log.Filename!))
                 {
-                    if (log.Headers != null)
+                    if (log.Headers is not null)
                     {
                         streamWriter.WriteLine(string.Format(log.FormatString!, log.Headers));
                     }
@@ -912,7 +912,7 @@ namespace MDSDKBase
             List<FileInfo> fileInfos = new List<FileInfo>();
             foreach (DirectoryInfo eachProjectDirectoryInfo in this.ProjectDirectoryInfos)
             {
-                if (projectName == null || eachProjectDirectoryInfo.Name == projectName || (projectNameIsAPrefix && eachProjectDirectoryInfo.Name.StartsWith(projectName)))
+                if (projectName is null || eachProjectDirectoryInfo.Name == projectName || (projectNameIsAPrefix && eachProjectDirectoryInfo.Name.StartsWith(projectName)))
                 {
                     if (getAllFilesInFolderIgnoringXtoc == false)
                     {
@@ -969,17 +969,17 @@ namespace MDSDKBase
         public FileInfo? GetFileInfoForTopic(string id)
         {
             string[] segments = id.Split('.');
-            if (segments == null || segments.Length != 2)
+            if (segments is null || segments.Length != 2)
             {
                 return null;
             }
 
             DirectoryInfo? directoryInfo = this.FindForProjectName(segments[0]);
-            if (directoryInfo == null)
+            if (directoryInfo is null)
             {
                 directoryInfo = this.FindForProjectName("modern_nodes");
             }
-            if (directoryInfo == null) return null;
+            if (directoryInfo is null) return null;
             if (Directory.Exists(Path.Combine(directoryInfo.FullName, directoryInfo.Name)))
             {
                 DirectoryInfo targetDir = new DirectoryInfo(Path.Combine(directoryInfo.FullName, directoryInfo.Name));
@@ -1011,7 +1011,7 @@ namespace MDSDKBase
         public Editor? GetEditorForTopic(string id)
         {
             FileInfo? fileInfo = this.GetFileInfoForTopic(id);
-            if (fileInfo != null)
+            if (fileInfo is not null)
             {
                 return new Editor(fileInfo);
             }
@@ -1028,7 +1028,7 @@ namespace MDSDKBase
         {
             get
             {
-                if (this.apiRefModel == null)
+                if (this.apiRefModel is null)
                 {
                     this.apiRefModel = new ApiRefModel();
 
@@ -1178,7 +1178,7 @@ namespace MDSDKBase
         {
             get
             {
-                if (this.Headers != null)
+                if (this.Headers is not null)
                 {
                     string format = "{0}";
                     for (int i = 1; i < this.Headers.Length; ++i)
@@ -1198,13 +1198,13 @@ namespace MDSDKBase
         /// </summary>
         public void AddEntry(params object[] args)
         {
-            if (args == null)
+            if (args is null)
             {
                 ProgramBase.ConsoleWrite("You called Log.AddEntry with no values.", ConsoleWriteStyle.Error);
                 throw new MDSDKException();
             }
 
-            if (this.Headers != null)
+            if (this.Headers is not null)
             {
                 try
                 {

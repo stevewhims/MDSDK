@@ -45,7 +45,7 @@ namespace MDSDK
 					break;
 				}
 			}
-			if (namespaceWinRT == null)
+			if (namespaceWinRT is null)
 			{
 				namespaceWinRT = new NamespaceWinRT() { ProjectName = projectName };
 				this.NamespaceWinRTs.Add(namespaceWinRT);
@@ -77,7 +77,7 @@ namespace MDSDK
 						{
 							return true;
 						}
-						else if (eachClassWinRT.InterfacesImplemented != null)
+						else if (eachClassWinRT.InterfacesImplemented is not null)
 						{
 							foreach (string? eachInterfaceImplemented in eachClassWinRT.InterfacesImplemented)
 							{
@@ -206,14 +206,14 @@ namespace MDSDK
 					break;
 				}
 			}
-			if (classWinRT == null)
+			if (classWinRT is null)
 			{
 				classWinRT = new ClassWinRT(id, name, fileInfo, classWinRTProvenance);
 				if (topicType != TopicType.NotYetKnown) classWinRT.TopicType = topicType;
 				this.ClassWinRTs.Add(classWinRT);
 			}
 
-			if (interfacesImplemented != null) classWinRT.InterfacesImplemented = interfacesImplemented;
+			if (interfacesImplemented is not null) classWinRT.InterfacesImplemented = interfacesImplemented;
 
 			return classWinRT;
 		}
