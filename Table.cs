@@ -148,7 +148,14 @@ namespace MDSDK
                 rendered.Append($"{Environment.NewLine}|");
                 foreach (var cell in row.RowCells)
                 {
-                    rendered.Append($" {cell} |");
+                    if (cell.Length > 0)
+                    { 
+                        rendered.Append($" {cell} |");
+                    }
+                    else
+                    {
+                        rendered.Append($" |");
+                    }
                 }
             }
 

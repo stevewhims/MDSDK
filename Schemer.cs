@@ -13,23 +13,33 @@ using System.Xml.Schema;
 
 namespace MDSDK
 {
-    internal class ChildElementAdapter
+    /// <summary>
+    /// A class that (via its derived types) adapts to either a topic or a non-topic child element.
+    /// </summary>
+    /// 
+    internal abstract class ChildElementAdapter
     {
-        /// <summary>
-        /// A class that adapts to either a non-topic or a topic child element.
-        /// </summary>
-        /// 
-        public SchemerComplexTypeElementEditor? SchemerComplexTypeElementEditorThatIsAChildOfThis = null;
-        public XmlSchemaElement? XmlSchemaElementThatIsAChildOfThis = null;
+    }
 
-        public ChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
+    internal class ChildElementAdapterTopic : ChildElementAdapter
+    {
+        public SchemerComplexTypeElementEditor SchemerComplexTypeElementEditorThatIsAChildOfThis { get; private set; }
+
+        public ChildElementAdapterTopic(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
         {
             this.SchemerComplexTypeElementEditorThatIsAChildOfThis = schemerComplexTypeElementEditorThatIsAChildOfThis;
         }
+    }
 
-        public ChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
+    internal class ChildElementAdapterNonTopic : ChildElementAdapter
+    {
+        public XmlSchemaElement XmlSchemaElementThatIsAChildOfThis { get; private set; }
+        public SchemerElementExistingTopicEditor? SchemerElementExistingTopicEditor { get; private set; }
+
+        public ChildElementAdapterNonTopic(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis, SchemerElementExistingTopicEditor? schemerElementExistingChildTopicEditor)
         {
             this.XmlSchemaElementThatIsAChildOfThis = xmlSchemaElementThatIsAChildOfThis;
+            this.SchemerElementExistingTopicEditor = schemerElementExistingChildTopicEditor;
         }
     }
 
@@ -156,6 +166,15 @@ namespace MDSDK
                                     schemerComplexTypeElementEditorParent.AddChildElementAdapter(schemerComplexTypeElementEditor);
                                 }
 
+                                // Predict what the path and filename for this element's topic's would be if it already existed, and get a FileInfo for it.
+                                FileInfo fileInfoPossiblyExisting = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
+
+                                // If there *is* an existing topic for this element, then create an Editor for it.
+                                if (fileInfoPossiblyExisting.Exists)
+                                {
+                                    schemerComplexTypeElementEditor.SetSchemerElementExistingTopicEditor(fileInfoPossiblyExisting);
+                                }
+
                                 if (this._schemerComplexTypeElementEditorRoot is null)
                                 {
                                     this._schemerComplexTypeElementEditorRoot = schemerComplexTypeElementEditor;
@@ -174,9 +193,9 @@ namespace MDSDK
                         XmlSchemaAny? childXmlSchemaAny = item as XmlSchemaAny;
                         if (childXmlSchemaAny is not null)
                         {
-                            if (schemerComplexTypeElementEditorParent is not null)
+                            if (schemerComplexTypeElementEditor is not null)
                             {
-                                schemerComplexTypeElementEditorParent.AddChildAny(childXmlSchemaAny);
+                                schemerComplexTypeElementEditor.AddChildAny(childXmlSchemaAny);
                             }
                         }
                     }
@@ -185,19 +204,24 @@ namespace MDSDK
 
             if (schemerComplexTypeElementEditor is null)
             {
-                if (schemerComplexTypeElementEditorParent is not null)
-                {
-                    schemerComplexTypeElementEditorParent.AddChildElementAdapter(xmlSchemaElement);
-                }
+                // Predict what the path and filename for the child element's topic's would be if it already existed, and get a FileInfo for it.
+                FileInfo fileInfoPossiblyExistingChildTopic = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
 
-                FileInfo fileInfo = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
-                if (fileInfo.Exists)
+                // If there *is* an existing topic for the child element, then create an Editor for it.
+                SchemerElementExistingTopicEditor? schemerElementExistingChildTopicEditor = null;
+                if (fileInfoPossiblyExistingChildTopic.Exists)
                 {
-                    ProgramBase.ConsoleWrite("will delete " + fileInfo.FullName + ")");
+                    schemerElementExistingChildTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExistingChildTopic);
+                    ProgramBase.ConsoleWrite("will delete " + fileInfoPossiblyExistingChildTopic.FullName + ")");
                 }
                 else
                 {
                     ProgramBase.ConsoleWrite("nothing to delete)");
+                }
+
+                if (schemerComplexTypeElementEditorParent is not null)
+                {
+                    schemerComplexTypeElementEditorParent.AddChildElementAdapter(xmlSchemaElement, schemerElementExistingChildTopicEditor);
                 }
             }
         }

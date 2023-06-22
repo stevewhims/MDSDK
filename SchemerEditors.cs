@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
+using System.Security.AccessControl;
 using System.Security.Permissions;
 using System.Text;
 using System.Xml;
@@ -79,12 +80,22 @@ namespace MDSDK
     /// </summary>
     internal class SchemerElementsLandingPageEditor : SchemerEditorBase
     {
-        private SchemerComplexTypeElementEditor _schemerComplexTypeElementEditor;
-
         public SchemerElementsLandingPageEditor(FileInfo fileInfo, SchemerComplexTypeElementEditor schemerComplexTypeElementEditor) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
         {
             this._schemerComplexTypeElementEditor = schemerComplexTypeElementEditor;
+
+            // Predict what the path and filename for this element's topic's would be if it already existed, and get a FileInfo for it.
+            FileInfo fileInfoPossiblyExisting = SchemerElementsLandingPageEditor.GetFileInfoForExistingTopic();
+
+            // If there *is* an existing topic for this element, then create an Editor for it.
+            if (fileInfoPossiblyExisting.Exists)
+            {
+                this.SchemerElementExistingTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExisting);
+            }
         }
+
+        private SchemerComplexTypeElementEditor _schemerComplexTypeElementEditor;
+        public SchemerElementExistingTopicEditor? SchemerElementExistingTopicEditor { get; private set; }
 
         private static FileInfo GetFileInfoForNewOrExistingTopic(bool isTopicNew)
         {
@@ -113,18 +124,15 @@ namespace MDSDK
             // Predict what the path and filename for this element's topic's would be if it already existed, and get a FileInfo for it.
             FileInfo fileInfoPossiblyExisting = SchemerElementsLandingPageEditor.GetFileInfoForExistingTopic();
 
-            // If there *is* an existing topic for this element, then create an Editor for it.
-            SchemerElementExistingTopicEditor? schemerElementExistingTopicEditor = null;
-            if (fileInfoPossiblyExisting.Exists)
-            {
-                schemerElementExistingTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExisting);
-            }
-            else
+            if (this.SchemerElementExistingTopicEditor is null)
             {
                 ProgramBase.ConsoleWrite(fileInfoPossiblyExisting.FullName + " doesn't exist; nothing to mine.", ConsoleWriteStyle.Warning);
             }
 
-            this.GenerateCommon(schemerElementExistingTopicEditor);
+            this.GenerateCommon(this.SchemerElementExistingTopicEditor);
+
+            this.WriteSectionHeadingAllElements();
+            this.WriteLine();
 
             string tree = string.Empty;
             this._schemerComplexTypeElementEditor.RenderElementTreeForElementsLandingPage(ref tree);
@@ -137,6 +145,11 @@ namespace MDSDK
     /// </summary>
     internal class SchemerComplexTypeElementEditor : SchemerEditorBase
     {
+        public SchemerComplexTypeElementEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
+        {
+            this.XmlSchemaElement = xmlSchemaElement;
+        }
+
         public XmlSchemaElement XmlSchemaElement { get; protected set; }
 
         protected Collection<ChildElementAdapter>? _childElementAdapters = null;
@@ -145,6 +158,12 @@ namespace MDSDK
         protected XmlSchemaAny? _childXmlSchemaAny = null;
 
         protected override string? RenderYamlFrontmatterApiNameValue() { return this.XmlSchemaElement.Name!; }
+
+        public SchemerElementExistingTopicEditor? SchemerElementExistingTopicEditor { get; private set; }
+        public void SetSchemerElementExistingTopicEditor(FileInfo fileInfo)
+        {
+            this.SchemerElementExistingTopicEditor = new SchemerElementExistingTopicEditor(fileInfo);
+        }
 
         private static FileInfo GetFileInfoForNewOrExistingTopic(XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, bool isTopicNew)
         {
@@ -168,28 +187,23 @@ namespace MDSDK
             return SchemerComplexTypeElementEditor.GetFileInfoForNewOrExistingTopic(xmlSchemaElementParent, xmlSchemaElement, false);
         }
 
-        public SchemerComplexTypeElementEditor(FileInfo fileInfo, XmlSchemaElement xmlSchemaElement) : base(fileInfo, EditorBaseFileInfoExistenceRequirements.FileMustNotAlreadyExist)
-        {
-            this.XmlSchemaElement = xmlSchemaElement;
-        }
-
         public void AddChildElementAdapter(SchemerComplexTypeElementEditor schemerComplexTypeElementEditorThatIsAChildOfThis)
         {
             if (this._childElementAdapters is null)
             {
                 this._childElementAdapters = new Collection<ChildElementAdapter>();
             }
-            this._childElementAdapters!.Add(new ChildElementAdapter(schemerComplexTypeElementEditorThatIsAChildOfThis));
+            this._childElementAdapters!.Add(new ChildElementAdapterTopic(schemerComplexTypeElementEditorThatIsAChildOfThis));
             schemerComplexTypeElementEditorThatIsAChildOfThis._parent = this;
         }
 
-        public void AddChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis)
+        public void AddChildElementAdapter(XmlSchemaElement xmlSchemaElementThatIsAChildOfThis, SchemerElementExistingTopicEditor? schemerElementExistingChildTopicEditor)
         {
             if (this._childElementAdapters is null)
             {
                 this._childElementAdapters = new Collection<ChildElementAdapter>();
             }
-            this._childElementAdapters!.Add(new ChildElementAdapter(xmlSchemaElementThatIsAChildOfThis));
+            this._childElementAdapters!.Add(new ChildElementAdapterNonTopic(xmlSchemaElementThatIsAChildOfThis, schemerElementExistingChildTopicEditor));
         }
 
         public void AddChildAny(XmlSchemaAny childXmlSchemaAny)
@@ -208,21 +222,18 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters!)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                    if (childElementAdapter is ChildElementAdapterTopic)
                     {
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.ConsoleWriteElementTree(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.ConsoleWriteElementTree(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
                     }
                     else
                     {
                         ProgramBase.ConsoleWriteIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
-                        ProgramBase.ConsoleWrite(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name + " element", ConsoleWriteStyle.Highlight);
+                        ProgramBase.ConsoleWrite($"{(childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name} element", ConsoleWriteStyle.Highlight);
                     }
                 }
             }
         }
-
-        // Methods that modify. Set this.IsDirty to true only you modify the document directly, not
-        // if you call a method that already does so.
 
         public void Generate()
         {
@@ -233,18 +244,12 @@ namespace MDSDK
             // Predict what the path and filename for this element's topic's would be if it already existed, and get a FileInfo for it.
             FileInfo fileInfoPossiblyExisting = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(xmlSchemaElementParent, this.XmlSchemaElement);
 
-            // If there *is* an existing topic for this element, then create an Editor for it.
-            SchemerElementExistingTopicEditor? schemerElementExistingTopicEditor = null;
-            if (fileInfoPossiblyExisting.Exists)
-            {
-                schemerElementExistingTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExisting);
-            }
-            else
+            if (this.SchemerElementExistingTopicEditor is null)
             {
                 ProgramBase.ConsoleWrite(fileInfoPossiblyExisting.FullName + " doesn't exist; nothing to mine.", ConsoleWriteStyle.Warning);
             }
 
-            this.GenerateCommon(schemerElementExistingTopicEditor);
+            this.GenerateCommon(this.SchemerElementExistingTopicEditor);
 
             this.WriteBeginSyntax();
             this.GenerateSyntax();
@@ -254,24 +259,24 @@ namespace MDSDK
 
             this.GenerateChildElementsSection();
 
-            if (schemerElementExistingTopicEditor is not null)
+            if (this.SchemerElementExistingTopicEditor is not null)
             {
-                this.WriteRemarks(schemerElementExistingTopicEditor!.EditorObjectModel.Remarks!);
+                this.WriteRemarks(this.SchemerElementExistingTopicEditor!.EditorObjectModel.Remarks!);
             }
 
             this.WriteSectionHeadingRequirements();
-            if (schemerElementExistingTopicEditor is not null)
+            if (this.SchemerElementExistingTopicEditor is not null)
             {
-                this.WriteRequirements(schemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable!);
+                this.WriteRequirements(this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable!);
             }
 
             if (this._childElementAdapters is not null)
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                    if (childElementAdapter is ChildElementAdapterTopic)
                     {
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.Generate();
                     }
                 }
             }
@@ -294,13 +299,22 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                    if (childElementAdapter is ChildElementAdapterTopic)
                     {
-                        this.WriteOpeningElementTag(childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement, ref numberOfCharsToIndent, false, true);
+                        this.WriteOpeningElementTag((childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement, ref numberOfCharsToIndent, false, true);
                     }
                     else
                     {
-                        this.WriteOpeningElementTag(childElementAdapter.XmlSchemaElementThatIsAChildOfThis!, ref numberOfCharsToIndent);
+                        this.WriteOpeningElementTag((childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis, ref numberOfCharsToIndent);
+
+                        string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(this.XmlSchemaElement.Name, (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
+
+                        SchemerCustomConfigurationSyntaxComment? syntaxComment = SchemerCustomConfiguration.FindSchemerCustomConfigurationSyntaxCommentForComesAfterElement(qualifiedName);
+                        if (syntaxComment != null)
+                        {
+                            string syntaxCommentString = syntaxComment.Render(numberOfCharsToIndent);
+                            this.Write(syntaxCommentString);
+                        }
                     }
                 }
             }
@@ -354,7 +368,16 @@ namespace MDSDK
 
         protected override string RenderTitle()
         {
-            return this.RenderElementName() + " element";
+            string elementName = this.RenderElementName();
+            string title = elementName + " element";
+
+            SchemerCustomConfigurationUniqueification? uniqueification = SchemerCustomConfiguration.FindSchemerCustomConfigurationUniqueificationForComesAfterElement(elementName);
+            if (uniqueification != null)
+            {
+                title += $" (for {SchemerEditorBase.SchemaDisplayName})";
+            }
+
+            return title;
         }
 
         private void GenerateChildElementsSection()
@@ -366,7 +389,7 @@ namespace MDSDK
 
                 this.GenerateTableForImmediateChildren();
 
-                this.GenerateSectionsForImmediateChildrenOfSimpleType();
+                if (!this.GenerateSectionsForImmediateChildrenOfSimpleType()) this.WriteLine();
             }
         }
 
@@ -381,37 +404,62 @@ namespace MDSDK
                 string? typeCell = string.Empty;
                 string descriptionCell = EditorBase.TBDSentenceString;
 
-                if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                if (childElementAdapter is ChildElementAdapterTopic)
                 {
                     elementCell = EditorBase.RenderHyperlink(
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement.Name!,
-                        @"./" + childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.FileInfo!.Name,
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement.Name!,
+                        @"./" + (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.FileInfo!.Name,
                         true);
-                    descriptionCell = "DUNNO YET";
+
+                    if ((childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.SchemerElementExistingTopicEditor is not null)
+                    {
+                        string? yamlDescription = (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.SchemerElementExistingTopicEditor!.GetYamlDescription();
+                        if (yamlDescription is not null) descriptionCell = yamlDescription;
+                    }
+
+                    var rowCells = new List<string>() { elementCell!, typeCell, descriptionCell };
+                    var row = new TableRow(rowCells);
+                    rows.Add(row);
                 }
                 else
                 {
                     elementCell = EditorBase.RenderHyperlink(
-                        childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!,
-                        @"#" + childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!.ToLower(),
+                        (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!,
+                        @"#" + (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!.ToLower(),
                         true);
-                    typeCell = childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.SchemaTypeName.Name;
+                    typeCell = (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.SchemaTypeName.Name;
 
-                    // Predict what the path and filename for the child element's topic's would be if it already existed, and get a FileInfo for it.
-                    FileInfo fileInfoPossiblyExistingChildTopic = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(this.XmlSchemaElement, childElementAdapter.XmlSchemaElementThatIsAChildOfThis);
-
-                    // If there *is* an existing topic for this element, then create an Editor for it, and get the YAML description from it.
-                    if (fileInfoPossiblyExistingChildTopic.Exists)
+                    if ((childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor is not null)
                     {
-                        var schemerElementExistingChildTopicEditor = new SchemerElementExistingTopicEditor(fileInfoPossiblyExistingChildTopic);
-                        string? yamlDescription = schemerElementExistingChildTopicEditor.GetYamlDescription();
+                        string? yamlDescription = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.GetYamlDescription();
                         if (yamlDescription is not null) descriptionCell = yamlDescription;
+                    }
+
+                    var rowCells = new List<string>() { elementCell!, typeCell, descriptionCell };
+                    var row = new TableRow(rowCells);
+                    rows.Add(row);
+
+                    string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(
+                        this.XmlSchemaElement.Name,
+                        (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
+
+                    // See whether we need to add an appendix element after the element we just wrote.
+                    SchemerCustomConfigurationAppendixElement? appendixElement = SchemerCustomConfiguration.FindSchemerCustomConfigurationAppendixElementForComesAfterElement(qualifiedName);
+                    if (appendixElement != null)
+                    {
+                        elementCell = EditorBase.RenderHyperlink(
+                            appendixElement.Element!,
+                            appendixElement.Url!,
+                            true);
+                        typeCell = appendixElement.Type;
+                        descriptionCell = appendixElement.Description!;
+
+                        rowCells = new List<string>() { elementCell!, typeCell!, descriptionCell };
+                        row = new TableRow(rowCells);
+                        rows.Add(row);
                     }
                 }
 
-                var rowCells = new List<string>() { elementCell!, typeCell, descriptionCell };
-                var row = new TableRow(rowCells);
-                rows.Add(row);
             }
 
             var table = new Table(columnHeadings, rows);
@@ -419,16 +467,30 @@ namespace MDSDK
             this.WriteLine();
         }
 
-        private void GenerateSectionsForImmediateChildrenOfSimpleType()
+        private bool GenerateSectionsForImmediateChildrenOfSimpleType()
         {
+            bool generatedAtLeastOneSection = false;
+
             foreach (var childElementAdapter in this._childElementAdapters!)
             {
-                if (childElementAdapter.XmlSchemaElementThatIsAChildOfThis is not null)
+                if (childElementAdapter is ChildElementAdapterNonTopic)
                 {
-                    this.WriteSectionHeading(3, childElementAdapter.XmlSchemaElementThatIsAChildOfThis.Name!);
-                    this.WriteLine();
+                    this.WriteSectionHeading(3, (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!);
+
+                    if ((childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor is not null)
+                    {
+                        TopicLines description = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.EditorObjectModel.Description;
+                        this.Write(description);
+                    }
+                    else
+                    {
+                        // Otherwise see if there's a description in `this` topic. And if not, then "TBD" it.
+                    }
                 }
+                generatedAtLeastOneSection = true;
             }
+
+            return generatedAtLeastOneSection;
         }
 
         public void RenderElementTreeForElementsLandingPage(ref string tree, int numberOfCharsToIndent = 0)
@@ -441,28 +503,31 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters!)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                    if (childElementAdapter is ChildElementAdapterTopic)
                     {
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.RenderElementTreeForElementsLandingPage(ref tree, numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.RenderElementTreeForElementsLandingPage(ref tree, numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                        // TODO, when we have a case that needs it: see whether we need to add an appendix element after the element we just wrote.
                     }
                     else
                     {
-                        string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(this.XmlSchemaElement.Name, childElementAdapter.XmlSchemaElementThatIsAChildOfThis!);
+                        string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(
+                            this.XmlSchemaElement.Name,
+                            (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
 
                         tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
                         tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
-                            childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!,
-                            $"{this.FileInfo.Name}#{childElementAdapter.XmlSchemaElementThatIsAChildOfThis!.Name!.ToLower()}",
+                            qualifiedName,
+                            $"./{this.FileInfo.Name}#{(childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!.ToLower()}",
                             true));
                         tree += Environment.NewLine;
 
                         // See whether we need to add an appendix element after the element we just wrote.
-                        SchemerCustomConfigurationAppendixElement? appendixElement = SchemerCustomConfiguration.FindSchemerCustomConfigurationAppendixElementForName(qualifiedName);
+                        SchemerCustomConfigurationAppendixElement? appendixElement = SchemerCustomConfiguration.FindSchemerCustomConfigurationAppendixElementForComesAfterElement(qualifiedName);
                         if (appendixElement != null)
                         {
                             tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
                             tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
-                                appendixElement.Name!,
+                                appendixElement.Element!,
                                 appendixElement.Url!,
                                 true));
                             tree += Environment.NewLine;
@@ -478,9 +543,9 @@ namespace MDSDK
             {
                 foreach (var childElementAdapter in this._childElementAdapters)
                 {
-                    if (childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis is not null)
+                    if (childElementAdapter is ChildElementAdapterTopic)
                     {
-                        childElementAdapter.SchemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.Commit();
                     }
                 }
             }

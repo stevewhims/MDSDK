@@ -178,10 +178,6 @@ namespace MDSDKBase
                             editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
                             moveToNextLine = false;
                         }
-                        else if (eachLineTrimmed.StartsWith("-") || eachLineTrimmed.StartsWith("*"))
-                        {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.EndFound;
-                        }
                         else
                         {
                             this.EditorObjectModel.AppendLineToDescription(eachLineTrimmed);
@@ -887,7 +883,7 @@ namespace MDSDKBase
             List<FileInfo> xtocFiles = projectDirectoryInfo.GetFiles(projectDirectoryInfo.Name + ".xtoc").ToList();
             if (xtocFiles.Count != 1)
             {
-                ProgramBase.ConsoleWrite(string.Format("Project folder {0} does not contain {1}", projectDirectoryInfo.Name, projectDirectoryInfo.Name + ".xtoc"), ConsoleWriteStyle.Error);
+                ProgramBase.ConsoleWrite(string.Format($"Project folder {projectDirectoryInfo.Name} does not contain {projectDirectoryInfo.Name}.xtoc"), ConsoleWriteStyle.Error);
                 throw new MDSDKException();
             }
 
@@ -1250,14 +1246,14 @@ namespace MDSDKBase
             {
                 if (ProgramBase.LiveRun)
                 {
-                    Interaction.Shell(string.Format("sd edit {0}", fileName), AppWinStyle.Hide, true);
+                    Interaction.Shell(string.Format($"sd edit {fileName}"), AppWinStyle.Hide, true);
                 }
                 this.xDocument!.Save(fileName);
                 ProgramBase.FilesSavedLog!.Add(fileName);
             }
             catch (System.Exception ex)
             {
-                ProgramBase.FileSaveErrorsLog!.Add(string.Format("{0}", ex.Message));
+                ProgramBase.FileSaveErrorsLog!.Add(string.Format($"{ex.Message}"));
             }
 
             this.IsDirty = false;
@@ -1268,11 +1264,11 @@ namespace MDSDKBase
         {
             if (boldLinkText)
             {
-                return String.Format(@"[**{0}**]({1})", linkText, linkUrl);
+                return String.Format($"[**{linkText}**]({linkUrl})");
             }
             else
             {
-                return String.Format(@"[{0}]({1})", linkText, linkUrl);
+                return String.Format($"[{linkText}]({linkUrl})");
             }
         }
 
@@ -1317,11 +1313,7 @@ namespace MDSDKBase
 
         public void WriteRemarks(TopicLines topicLines)
         {
-            if (topicLines.Count == 0)
-            {
-                this.WriteLine();
-            }
-            else
+            if (topicLines.Count != 0)
             {
                 this.WriteSectionHeadingRemarks();
                 using (StreamWriter streamWriter = this.FileInfo!.AppendText())
@@ -1604,6 +1596,11 @@ namespace MDSDKBase
         {
             this.WriteLine(EditorObjectModel.CodeBlockEndDelimiter);
             this.WriteLine();
+        }
+
+        public void WriteSectionHeadingAllElements()
+        {
+            this.WriteSectionHeading(2, "All elements");
         }
 
         public void WriteSectionHeadingParentElements()
