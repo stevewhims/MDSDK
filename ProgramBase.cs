@@ -162,7 +162,7 @@ namespace MDSDKBase
         {
             try
             {
-                this.ReadConfigurationFile();
+                ProgramBase.ReadConfigurationFile();
 
                 ProgramBase.FilesSavedLog = new Log() { Label = "Files saved.", Filename = "FilesSaved_Log.txt" };
                 ProgramBase.FileSaveErrorsLog = new Log() { Label = "File save errors.", Filename = "FileSaveErrors_Log.txt", AnnouncementStyle = ConsoleWriteStyle.Error };
@@ -198,7 +198,8 @@ namespace MDSDKBase
 
         public static void SetCurrentDirectory(DirectoryInfo directoryInfo)
         {
-            ProgramBase.SetCurrentDirectory(directoryInfo.FullName);
+            Directory.SetCurrentDirectory(directoryInfo.FullName!);
+            ProgramBase.ConsoleWrite($"Current directory set to {directoryInfo.FullName}", ConsoleWriteStyle.Success);
         }
 
         public static void SetCurrentDirectory(string? directoryFullName)
@@ -207,7 +208,7 @@ namespace MDSDKBase
             ProgramBase.ConsoleWrite($"Current directory set to {directoryFullName}", ConsoleWriteStyle.Success);
         }
 
-        private void ReadConfigurationFile()
+        private static void ReadConfigurationFile()
         {
             ProgramBase.ExeFolderPath = Directory.GetCurrentDirectory();
 
@@ -229,86 +230,86 @@ namespace MDSDKBase
                     {
                         string? value = null;
 
-                        if (this.GetConfigValue(currentLine, ProgramBase.MY_CONTENT_REPOS_FOLDER_CONFIG_KEY, ref value))
+                        if (ProgramBase.GetConfigValue(currentLine, ProgramBase.MY_CONTENT_REPOS_FOLDER_CONFIG_KEY, ref value))
                         {
                             string? expandedMyContentReposFolderPath = Environment.ExpandEnvironmentVariables(value!);
                             ProgramBase.MyContentReposFolderDirectoryInfo = new DirectoryInfo(expandedMyContentReposFolderPath);
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WIN32_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.Win32ConceptualContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.Win32ApiReferenceContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WINRT_CONCEPTUAL_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.WinRTConceptualContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WINRT_API_REFERENCE_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.WinRTApiReferenceContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_RELATED_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WINRT_RELATED_CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.WinRTRelatedContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WIN32_API_REFERENCE_BUILD_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.Win32ApiReferenceBuildRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WINDOWS_SDK_WIN32_HEADER_FILES_FOLDER_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WINDOWS_SDK_WIN32_HEADER_FILES_FOLDER_CONFIG_KEY, ref value))
                         {
                             ProgramBase.WindowsSDKWin32HeaderFilesFolderName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.LIVE_RUN_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.LIVE_RUN_CONFIG_KEY, ref value))
                         {
                             ProgramBase.LiveRun = (value == "1");
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.CONTENT_REPO_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.CONTENT_REPO_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.ContentRepoName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.BASE_BRANCH_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.BASE_BRANCH_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.BaseBranchName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.MY_ALIAS_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.MY_ALIAS_CONFIG_KEY, ref value))
                         {
                             ProgramBase.MyAlias = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.PERSONAL_BRANCH_NAME_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.PERSONAL_BRANCH_NAME_CONFIG_KEY, ref value))
                         {
                             ProgramBase.PersonalBranchName = value;
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.COMMIT_MESSAGE_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.COMMIT_MESSAGE_CONFIG_KEY, ref value))
                         {
                             ProgramBase.CommitMessage = value;
                         }
-                        //else if (this.GetConfigValue(currentLine, ProgramBase.THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY, ref value))
+                        //else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.THROWEXCEPTIONONBADXTOCTOPICURL_CONFIG_KEY, ref value))
                         //{
                         //	ProgramBase.ThrowExceptionOnBadXTocTopicURL = (value == "1");
                         //}
-                        else if (this.GetConfigValue(currentLine, ProgramBase.UWP_PROJ_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.UWP_PROJ_CONFIG_KEY, ref value))
                         {
                             ProgramBase.UWPProjects.Add(value!);
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.UWP_EXCLUDE_TYPE_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.UWP_EXCLUDE_TYPE_CONFIG_KEY, ref value))
                         {
                             if (!ProgramBase.UWPExcludedTypes.Contains(value!))
                             {
                                 ProgramBase.UWPExcludedTypes.Add(value!);
                             }
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.WINRT_PROJ_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.WINRT_PROJ_CONFIG_KEY, ref value))
                         {
                             if (!ProgramBase.WinRTProjects.Contains(value!))
                             {
                                 ProgramBase.WinRTProjects.Add(value!);
                             }
                         }
-                        else if (this.GetConfigValue(currentLine, ProgramBase.REF_PROJ_PREFIX_CONFIG_KEY, ref value))
+                        else if (ProgramBase.GetConfigValue(currentLine, ProgramBase.REF_PROJ_PREFIX_CONFIG_KEY, ref value))
                         {
                             if (!ProgramBase.ReferenceProjectPrefixes.Contains(value!))
                             {
@@ -328,7 +329,7 @@ namespace MDSDKBase
             ProgramBase.SetCurrentDirectory(ProgramBase.MyContentReposFolderDirectoryInfo);
         }
 
-        private bool GetConfigValue(string currentLine, string key, ref string? value)
+        private static bool GetConfigValue(string currentLine, string key, ref string? value)
         {
             if (currentLine.StartsWith(key))
             {
@@ -618,12 +619,17 @@ namespace MDSDKBase
         }
 
         public const int NumberOfCharsToIndentIncrement = 2;
-        public static char IndentationChar = ' ';
+        public static char IndentationCharForConsole = ' ';
+        public static string RenderIndent(int numberOfCharsToIndent)
+        {
+            string indentationString = string.Empty;
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentationString += ProgramBase.IndentationCharForConsole;
+            return indentationString;
+        }
+
         public static void ConsoleWriteIndent(int numberOfCharsToIndent)
         {
-            string indentation = string.Empty;
-            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentation += ProgramBase.IndentationChar;
-            ProgramBase.ConsoleWrite(indentation, ConsoleWriteStyle.Default, 0);
+            ProgramBase.ConsoleWrite(ProgramBase.RenderIndent(numberOfCharsToIndent), ConsoleWriteStyle.Default, 0);
         }
 
         private void OutputFilesSavedLog()

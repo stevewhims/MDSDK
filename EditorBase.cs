@@ -178,6 +178,10 @@ namespace MDSDKBase
                             editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
                             moveToNextLine = false;
                         }
+                        else if (eachLineTrimmed.StartsWith("-") || eachLineTrimmed.StartsWith("*"))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.EndFound;
+                        }
                         else
                         {
                             this.EditorObjectModel.AppendLineToDescription(eachLineTrimmed);
@@ -1260,9 +1264,16 @@ namespace MDSDKBase
         }
         #endregion
 
-        public static string RenderHyperlink(string link_text, string link_url)
+        public static string RenderHyperlink(string linkText, string linkUrl, bool boldLinkText = false)
         {
-            return String.Format(@"[{0}]({1})", link_text, link_url);
+            if (boldLinkText)
+            {
+                return String.Format(@"[**{0}**]({1})", linkText, linkUrl);
+            }
+            else
+            {
+                return String.Format(@"[{0}]({1})", linkText, linkUrl);
+            }
         }
 
         public string? GetYamlDescription()
@@ -1306,17 +1317,20 @@ namespace MDSDKBase
 
         public void WriteRemarks(TopicLines topicLines)
         {
-            this.WriteSectionHeadingRemarks();
-            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
-            {
-                foreach (var line in topicLines)
-                {
-                    streamWriter.WriteLine(line);
-                }
-            }
             if (topicLines.Count == 0)
             {
                 this.WriteLine();
+            }
+            else
+            {
+                this.WriteSectionHeadingRemarks();
+                using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+                {
+                    foreach (var line in topicLines)
+                    {
+                        streamWriter.WriteLine(line);
+                    }
+                }
             }
         }
 
@@ -1338,17 +1352,22 @@ namespace MDSDKBase
         }
 
         public const int NumberOfCharsToIndentIncrement = 4;
-        public static char IndentationChar = ' ';
-        public void WriteIndent(int numberOfCharsToIndent)
+        public static char IndentationCharForContent = ' ';
+        public static string RenderIndent(int numberOfCharsToIndent)
         {
-            string indentation = string.Empty;
-            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentation += EditorBase.IndentationChar;
-            this.Write(indentation);
+            string indentationString = string.Empty;
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) indentationString += EditorBase.IndentationCharForContent;
+            return indentationString;
         }
 
-        public static void WriteIndentToString(int numberOfCharsToIndent, ref string text)
+        public static void AppendIndentToStringByRef(int numberOfCharsToIndent, ref string text)
         {
-            for (int ix = 0; ix < numberOfCharsToIndent; ix++) text += EditorBase.IndentationChar;
+            for (int ix = 0; ix < numberOfCharsToIndent; ix++) text += EditorBase.IndentationCharForContent;
+        }
+
+        public void WriteIndent(int numberOfCharsToIndent)
+        {
+            this.Write(EditorBase.RenderIndent(numberOfCharsToIndent));
         }
 
         public static void IncrementIndent(ref int numberOfCharsToIndent)
@@ -1403,32 +1422,39 @@ namespace MDSDKBase
 
         public void WriteYamlFrontmatterMsTopicReference()
         {
-            WriteYamlFrontmatterKeyValuePair("ms.topic", "reference");
+            this.WriteYamlFrontmatterKeyValuePair("ms.topic", "reference");
         }
 
         public void WriteYamlFrontmatterMsDate()
         {
-            WriteYamlFrontmatterKeyValuePair("ms.date", DateTime.Now.ToString("MM/dd/yy"));
+            WriteYamlFrontmatterKeyValuePair("ms.date", DateTime.Now.ToString("MM/dd/yyyy"));
         }
 
         public void WriteYamlFrontmatterTopicTypeAPIRefKbSyntax()
         {
-            WriteYamlFrontmatterKeyValues("topic_type", new string[] { "APIRef", "kbSyntax" });
+            this.WriteYamlFrontmatterKeyValues("topic_type", new string[] { "APIRef", "kbSyntax" });
         }
 
-        public void WriteYamlFrontmatterApiName(string value)
+        public void WriteYamlFrontmatterApiName(string? value)
         {
-            WriteYamlFrontmatterKeyValues("api_name", new string[] { value });
+            if (value is null)
+            {
+                this.WriteYamlFrontmatterKeyValuePair("api_name", string.Empty);
+            }
+            else
+            {
+                this.WriteYamlFrontmatterKeyValues("api_name", new string[] { value });
+            }
         }
 
         public void WriteYamlFrontmatterApiTypeSchema()
         {
-            WriteYamlFrontmatterKeyValues("api_type", new string[] { "Schema" });
+            this.WriteYamlFrontmatterKeyValues("api_type", new string[] { "Schema" });
         }
 
         public void WriteYamlFrontmatterApiLocation(string value)
         {
-            WriteYamlFrontmatterKeyValuePair("api_location", value);
+            this.WriteYamlFrontmatterKeyValuePair("api_location", value);
         }
 
         public void WriteSectionHeading(int hLevel, string heading)
@@ -1465,7 +1491,7 @@ namespace MDSDKBase
             if (xmlSchemaParticle.MaxOccurs != 1)
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "maxOccurs=\"" + xmlSchemaParticle.MaxOccursString + "\"";
             }
         }
@@ -1475,7 +1501,7 @@ namespace MDSDKBase
             if (xmlSchemaParticle.MinOccurs != 1)
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "minOccurs=\"" + xmlSchemaParticle.MinOccursString + "\"";
             }
         }
@@ -1493,14 +1519,14 @@ namespace MDSDKBase
             if (xmlSchemaElement.SchemaTypeName.Name != string.Empty)
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "type=\"" + xmlSchemaElement.SchemaTypeName.Name + "\"";
             }
 
             if (isElided)
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "...";
             }
 
@@ -1532,7 +1558,7 @@ namespace MDSDKBase
             if (xmlSchemaAny.ProcessContents != XmlSchemaContentProcessing.None)
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "processContents=\"" + xmlSchemaAny.ProcessContents.ToString().ToLower() + "\"";
             }
 
@@ -1543,7 +1569,7 @@ namespace MDSDKBase
             if (xmlSchemaAny.Namespace != "##any")
             {
                 if (attributes != string.Empty) attributes += Environment.NewLine;
-                WriteIndentToString(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
+                EditorBase.AppendIndentToStringByRef(numberOfCharsToIndent + EditorBase.NumberOfCharsToIndentIncrement, ref attributes);
                 attributes += "namespace=\"" + xmlSchemaAny.Namespace + "\"";
             }
 
@@ -1600,9 +1626,14 @@ namespace MDSDKBase
             this.WriteSectionHeading(2, "Requirements");
         }
 
+        public static string RenderBulletPoint(string text)
+        {
+            return BulletPointPlusSpace + text;
+        }
+
         public void WriteBulletPoint(string text)
         {
-            this.WriteLine(BulletPointPlusSpace + text);
+            this.WriteLine(EditorBase.RenderBulletPoint(text));
         }
     }
 }

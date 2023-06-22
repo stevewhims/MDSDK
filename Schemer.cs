@@ -43,17 +43,23 @@ namespace MDSDK
         private SchemerComplexTypeElementEditor? _schemerComplexTypeElementEditorRoot = null;
         private string? _xsdFileName = null;
 
-        public Schemer(string topicsRootPath, string topicsFolderName, string schemaName, string xsdFileName)
+        public Schemer(string topicsRootPath, string topicsFolderName, string schemaDisplayName, string schemaNameForFilenames, string xsdFileName)
         {
             SchemerEditorBase.DirectoryInfoForExistingTopics = new DirectoryInfo(topicsRootPath + topicsFolderName);
             SchemerEditorBase.DirectoryInfoForNewTopics = new DirectoryInfo(topicsRootPath + topicsFolderName + @"_gen");
-            SchemerEditorBase.SchemaName = schemaName;
+            SchemerEditorBase.SchemaDisplayName = schemaDisplayName;
+            SchemerEditorBase.SchemaNameForFilenames = schemaNameForFilenames;
             this._xsdFileName = xsdFileName;
+
+            SchemerCustomConfiguration.ReadConfigurationFile(this);
         }
 
         public void DebugInit()
         {
-            SchemerEditorBase.DirectoryInfoForNewTopics!.Delete(true);
+            if (SchemerEditorBase.DirectoryInfoForNewTopics!.Exists)
+            {
+                SchemerEditorBase.DirectoryInfoForNewTopics!.Delete(true);
+            }
         }
 
         /// <summary>
@@ -112,17 +118,11 @@ namespace MDSDK
             }
         }
 
-        private void SurveyElementRecursive(SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorParent, XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, int indentation = 0)
+        private void SurveyElementRecursive(SchemerComplexTypeElementEditor? schemerComplexTypeElementEditorParent, XmlSchemaElement? xmlSchemaElementParent, XmlSchemaElement xmlSchemaElement, int numberOfCharsToIndent = 0)
         {
-            if (this._schemerElementsLandingPageEditor is null)
-            {
-                FileInfo fileInfoForNewTopic = SchemerElementsLandingPageEditor.FormatFileInfo(true);
-                this._schemerElementsLandingPageEditor = new SchemerElementsLandingPageEditor(fileInfoForNewTopic, xmlSchemaElement);
-            }
-
             SchemerComplexTypeElementEditor? schemerComplexTypeElementEditor = null;
 
-            ProgramBase.ConsoleWriteIndent(indentation);
+            ProgramBase.ConsoleWriteIndent(numberOfCharsToIndent);
 
             ProgramBase.ConsoleWrite(xmlSchemaElement.Name + " element", ConsoleWriteStyle.Highlight, 0);
             ProgramBase.ConsoleWrite(" (", ConsoleWriteStyle.Default, 0);
@@ -146,7 +146,7 @@ namespace MDSDK
                         {
                             if (schemerComplexTypeElementEditor is null)
                             {
-                                FileInfo fileInfoForNewTopic = SchemerEditorBase.GetFileInfoForNewTopic(xmlSchemaElementParent, xmlSchemaElement);
+                                FileInfo fileInfoForNewTopic = SchemerComplexTypeElementEditor.GetFileInfoForNewTopic(xmlSchemaElementParent, xmlSchemaElement);
                                 ProgramBase.ConsoleWrite("will create " + fileInfoForNewTopic.FullName + ")");
 
                                 // Create a new element topic, and add it to its parent topic's child element adapters collection.
@@ -162,7 +162,13 @@ namespace MDSDK
                                 }
                             }
 
-                            this.SurveyElementRecursive(schemerComplexTypeElementEditor, xmlSchemaElement, childXmlSchemaElement, indentation + ProgramBase.NumberOfCharsToIndentIncrement);
+                            if (this._schemerElementsLandingPageEditor is null)
+                            {
+                                FileInfo fileInfoForNewTopic = SchemerElementsLandingPageEditor.GetFileInfoForNewTopic();
+                                this._schemerElementsLandingPageEditor = new SchemerElementsLandingPageEditor(fileInfoForNewTopic, schemerComplexTypeElementEditor!);
+                            }
+
+                            this.SurveyElementRecursive(schemerComplexTypeElementEditor, xmlSchemaElement, childXmlSchemaElement, numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
                         }
 
                         XmlSchemaAny? childXmlSchemaAny = item as XmlSchemaAny;
@@ -184,7 +190,7 @@ namespace MDSDK
                     schemerComplexTypeElementEditorParent.AddChildElementAdapter(xmlSchemaElement);
                 }
 
-                FileInfo fileInfo = SchemerEditorBase.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
+                FileInfo fileInfo = SchemerComplexTypeElementEditor.GetFileInfoForExistingTopic(xmlSchemaElementParent, xmlSchemaElement);
                 if (fileInfo.Exists)
                 {
                     ProgramBase.ConsoleWrite("will delete " + fileInfo.FullName + ")");
@@ -212,6 +218,8 @@ namespace MDSDK
         public void Generate()
         {
             ProgramBase.ConsoleWrite("*** GENERATE PHASE ***", ConsoleWriteStyle.Default, 2);
+
+            this._schemerElementsLandingPageEditor!.Generate();
 
             this._schemerComplexTypeElementEditorRoot!.Generate();
         }

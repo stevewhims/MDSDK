@@ -109,10 +109,10 @@ namespace MDSDKBase
     internal class EditorObjectModelYamlFrontmatter
     {
         public List<EditorObjectModelYamlKeyValueBase> YamlKeyValueBases { get; private set; }
-        public EditorObjectModelYamlKeyValueBase? YamlTitle { get; private set; }
-        public EditorObjectModelYamlKeyValueBase? YamlDescription { get; private set; }
-        public EditorObjectModelYamlKeyValueBase? YamlMsAssetId { get; private set; }
-        public EditorObjectModelYamlKeyValueBase? YamlMsDate { get; private set; }
+        public EditorObjectModelYamlKeyValuePair? YamlTitle { get; private set; }
+        public EditorObjectModelYamlKeyValuePair? YamlDescription { get; private set; }
+        public EditorObjectModelYamlKeyValuePair? YamlMsAssetId { get; private set; }
+        public EditorObjectModelYamlKeyValuePair? YamlMsDate { get; private set; }
 
         public EditorObjectModelYamlFrontmatter()
         {
