@@ -64,6 +64,12 @@ namespace MDSDK
             {
                 this.Write(schemerElementExistingTopicEditor!.EditorObjectModel.Description!);
             }
+            else
+            {
+                this.WriteLine();
+                this.WriteLine(EditorBase.TBDSentenceString);
+                this.WriteLine();
+            }
         }
     }
 
@@ -235,6 +241,50 @@ namespace MDSDK
             }
         }
 
+        public void RenderElementTreeForElementsLandingPage(ref string tree, int numberOfCharsToIndent = 0)
+        {
+            tree += EditorBase.RenderIndent(numberOfCharsToIndent);
+            tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(this.RenderElementName(), @"./" + this.FileInfo!.Name, true));
+            tree += Environment.NewLine;
+
+            if (this._childElementAdapters is not null)
+            {
+                foreach (var childElementAdapter in this._childElementAdapters!)
+                {
+                    if (childElementAdapter is ChildElementAdapterTopic)
+                    {
+                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.RenderElementTreeForElementsLandingPage(ref tree, numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                        // TODO, when we have a case that needs it: see whether we need to add an appendix element after the element we just wrote.
+                    }
+                    else
+                    {
+                        string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(
+                            this.XmlSchemaElement.Name,
+                            (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
+
+                        tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                        tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
+                            qualifiedName,
+                            $"./{this.FileInfo.Name}#{(childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!.ToLower()}",
+                            true));
+                        tree += Environment.NewLine;
+
+                        // See whether we need to add an appendix element after the element we just wrote.
+                        SchemerCustomConfigurationAppendixElement? appendixElement = SchemerCustomConfiguration.FindSchemerCustomConfigurationAppendixElementForComesAfterElement(qualifiedName);
+                        if (appendixElement != null)
+                        {
+                            tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
+                            tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
+                                appendixElement.Element!,
+                                appendixElement.Url!,
+                                true));
+                            tree += Environment.NewLine;
+                        }
+                    }
+                }
+            }
+        }
+
         public void Generate()
         {
             /// If this topic isn't the topic for the root element (so it has a parent), then grab the XmlSchemaElement that represents the parent's xsd element.
@@ -267,7 +317,12 @@ namespace MDSDK
             this.WriteSectionHeadingRequirements();
             if (this.SchemerElementExistingTopicEditor is not null)
             {
-                this.WriteRequirements(this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable!);
+                this.WriteRequirements();
+            }
+            else
+            {
+                this.WriteLine();
+                this.WriteLine(EditorBase.TBDSentenceString);
             }
 
             if (this._childElementAdapters is not null)
@@ -434,6 +489,20 @@ namespace MDSDK
                         string? yamlDescription = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.GetYamlDescription();
                         if (yamlDescription is not null) descriptionCell = yamlDescription;
                     }
+                    else
+                    {
+                        Table? childElementsTable = this.SchemerElementExistingTopicEditor?.EditorObjectModel.ChildElementsTable;
+                        if (childElementsTable is not null)
+                        {
+                            foreach (var eachRow in childElementsTable.Rows)
+                            {
+                                if (eachRow.RowCells[0] == elementCell)
+                                {
+                                    descriptionCell = eachRow.RowCells[2];
+                                }
+                            }
+                        }
+                    }
 
                     var rowCells = new List<string>() { elementCell!, typeCell, descriptionCell };
                     var row = new TableRow(rowCells);
@@ -482,9 +551,18 @@ namespace MDSDK
                         TopicLines description = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.EditorObjectModel.Description;
                         this.Write(description);
                     }
+                    else if (this.SchemerElementExistingTopicEditor is not null)
+                    {
+                        TopicLines? childElementsH3SectionTopicLines =
+                            this.SchemerElementExistingTopicEditor.EditorObjectModel.FindChildElementsH3SectionTopicLinesForElement(
+                                (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!);
+                        if (childElementsH3SectionTopicLines is not null) this.Write(childElementsH3SectionTopicLines);
+                    }
                     else
                     {
-                        // Otherwise see if there's a description in `this` topic. And if not, then "TBD" it.
+                        this.WriteLine();
+                        this.WriteLine(EditorBase.TBDSentenceString);
+                        this.WriteLine();
                     }
                 }
                 generatedAtLeastOneSection = true;
@@ -493,47 +571,12 @@ namespace MDSDK
             return generatedAtLeastOneSection;
         }
 
-        public void RenderElementTreeForElementsLandingPage(ref string tree, int numberOfCharsToIndent = 0)
+        public void WriteRequirements()
         {
-            tree += EditorBase.RenderIndent(numberOfCharsToIndent);
-            tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(this.RenderElementName(), @"./" + this.FileInfo!.Name, true));
-            tree += Environment.NewLine;
-
-            if (this._childElementAdapters is not null)
+            this.WriteLine();
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                foreach (var childElementAdapter in this._childElementAdapters!)
-                {
-                    if (childElementAdapter is ChildElementAdapterTopic)
-                    {
-                        (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.RenderElementTreeForElementsLandingPage(ref tree, numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
-                        // TODO, when we have a case that needs it: see whether we need to add an appendix element after the element we just wrote.
-                    }
-                    else
-                    {
-                        string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(
-                            this.XmlSchemaElement.Name,
-                            (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
-
-                        tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
-                        tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
-                            qualifiedName,
-                            $"./{this.FileInfo.Name}#{(childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!.ToLower()}",
-                            true));
-                        tree += Environment.NewLine;
-
-                        // See whether we need to add an appendix element after the element we just wrote.
-                        SchemerCustomConfigurationAppendixElement? appendixElement = SchemerCustomConfiguration.FindSchemerCustomConfigurationAppendixElementForComesAfterElement(qualifiedName);
-                        if (appendixElement != null)
-                        {
-                            tree += EditorBase.RenderIndent(numberOfCharsToIndent + ProgramBase.NumberOfCharsToIndentIncrement);
-                            tree += EditorBase.RenderBulletPoint(EditorBase.RenderHyperlink(
-                                appendixElement.Element!,
-                                appendixElement.Url!,
-                                true));
-                            tree += Environment.NewLine;
-                        }
-                    }
-                }
+                streamWriter.WriteLine(this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable?.Render()); // Yes, that ? is intentional.
             }
         }
 

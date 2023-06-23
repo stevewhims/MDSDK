@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
+using System.Transactions;
 using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.Serialization;
@@ -129,6 +130,8 @@ namespace MDSDKBase
         {
             // TODO: this needs implementing more fully. It's currently focused on topics for xsd elements.
 
+            EditorObjectModelChildElementsH3Section? childElementsH2Section = null;
+
             int ix = 0;
             var editorBaseTopicSection = EditorObjectModelTopicSection.NothingFound;
             while (ix < this.fileLines.Count)
@@ -159,7 +162,7 @@ namespace MDSDKBase
                     case EditorObjectModelTopicSection.ContentAfterYamlFrontmatterFound:
                         if (eachLineTrimmed.StartsWith("# "))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.DescriptionFound;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.H1Found; // H1 found, and moved to next line.
                         }
                         else if (eachLineTrimmed != string.Empty)
                         {
@@ -168,14 +171,14 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.DescriptionFound:
+                    case EditorObjectModelTopicSection.H1Found:
                         if (eachLineTrimmed.StartsWith("```"))
                         {
                             editorBaseTopicSection = EditorObjectModelTopicSection.SyntaxFound;
                         }
                         else if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
                             moveToNextLine = false;
                         }
                         else
@@ -187,26 +190,79 @@ namespace MDSDKBase
                     case EditorObjectModelTopicSection.SyntaxFound:
                         if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
                             moveToNextLine = false;
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.HeadingFound:
-                        if (eachLineTrimmed == "## Remarks")
+                    case EditorObjectModelTopicSection.ChildElementsH2Found:
+                        if (eachLineTrimmed != string.Empty)
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.RemarksFound;
-                        }
-                        else if (eachLineTrimmed == "## Requirements")
-                        {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.RequirementsFound;
+                            Table? childElementsTable = Table.GetNextTable(this.FileInfo!.Name, this.fileLines, ref ix);
+                            this.EditorObjectModel.SetChildElementsTable(childElementsTable);
+                            editorBaseTopicSection = EditorObjectModelTopicSection.ChildElementsH2BetweenSections;
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.RemarksFound:
+                    case EditorObjectModelTopicSection.ChildElementsH2BetweenSections:
+                        if (eachLineTrimmed.StartsWith("### "))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.ChildElementH3Found;
+                            moveToNextLine = false;
+                        }
+                        else if (eachLineTrimmed.StartsWith("#"))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
+                            moveToNextLine = false;
+                        }
+                        break;
+
+                    case EditorObjectModelTopicSection.ChildElementH3Found:
+                        if (eachLineTrimmed.StartsWith("### "))
+                        {
+                            childElementsH2Section = this.EditorObjectModel.AppendChildElementsH3Section(eachLineTrimmed);
+                        }
+                        else if (eachLineTrimmed.StartsWith("#"))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
+                            moveToNextLine = false;
+                        }
+                        else
+                        {
+                            if (childElementsH2Section is not null)
+                            {
+                                childElementsH2Section.AppendLineToChildElementsH3Section(eachLineTrimmed);
+                            }
+                        }
+                        break;
+
+                    case EditorObjectModelTopicSection.BetweenSections:
                         if (eachLineTrimmed.StartsWith("#"))
                         {
-                            editorBaseTopicSection = EditorObjectModelTopicSection.HeadingFound;
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
+                            moveToNextLine = false;
+                        }
+                        break;
+
+                    case EditorObjectModelTopicSection.OtherHeadingFound:
+                        if (eachLineTrimmed == "## Child elements")
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.ChildElementsH2Found; // H2 found, and moved to next line.
+                        }
+                        else if (eachLineTrimmed == "## Remarks")
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.RemarksH2Found; // H2 found, and moved to next line.
+                        }
+                        else if (eachLineTrimmed == "## Requirements")
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.RequirementsH2Found; // H2 found, and moved to next line.
+                        }
+                        break;
+
+                    case EditorObjectModelTopicSection.RemarksH2Found:
+                        if (eachLineTrimmed.StartsWith("#"))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
                             moveToNextLine = false;
                         }
                         else
@@ -215,10 +271,13 @@ namespace MDSDKBase
                         }
                         break;
 
-                    case EditorObjectModelTopicSection.RequirementsFound:
-                        Table? requirementsTable = Table.GetNextTable(this.FileInfo!.Name, this.fileLines, ix);
-                        this.EditorObjectModel.SetRequirementsTable(requirementsTable);
-                        editorBaseTopicSection = EditorObjectModelTopicSection.EndFound;
+                    case EditorObjectModelTopicSection.RequirementsH2Found:
+                        if (eachLineTrimmed != string.Empty)
+                        {
+                            Table? requirementsTable = Table.GetNextTable(this.FileInfo!.Name, this.fileLines, ref ix);
+                            this.EditorObjectModel.SetRequirementsTable(requirementsTable);
+                            editorBaseTopicSection = EditorObjectModelTopicSection.EndFound;
+                        }
                         break;
 
                     default:
@@ -313,7 +372,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdFunctionsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -326,7 +386,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdEnumerationsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -339,7 +400,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdStructuresH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -352,7 +414,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdInterfacesH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -365,7 +428,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdCallbackFunctionsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -378,7 +442,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdClassesH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -391,7 +456,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.IndexMdIoctlsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -404,7 +470,8 @@ namespace MDSDKBase
                 string eachLineTrimmed = this.fileLines[ix].Trim();
                 if (eachLineTrimmed == EditorBase.InterfaceTopicMethodsH2)
                 {
-                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ix + 1);
+                    int lineNumberToStartAtZeroBased = ix + 1;
+                    return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
                 }
             }
             return null;
@@ -1047,7 +1114,8 @@ namespace MDSDKBase
         /// <returns>A Table object.</returns>
         public Table? GetFirstTable()
         {
-            return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines);
+            int lineNumberToStartAtZeroBased = 0;
+            return Table.GetNextTable(this.FileInfo!.FullName, this.fileLines, ref lineNumberToStartAtZeroBased);
         }
 
         /// <summary>
@@ -1323,15 +1391,6 @@ namespace MDSDKBase
                         streamWriter.WriteLine(line);
                     }
                 }
-            }
-        }
-
-        public void WriteRequirements(Table? requirementsTable)
-        {
-            this.WriteLine();
-            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
-            {
-                streamWriter.WriteLine(requirementsTable?.Render());
             }
         }
 

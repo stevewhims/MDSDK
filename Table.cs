@@ -149,7 +149,7 @@ namespace MDSDK
                 foreach (var cell in row.RowCells)
                 {
                     if (cell.Length > 0)
-                    { 
+                    {
                         rendered.Append($" {cell} |");
                     }
                     else
@@ -192,7 +192,7 @@ namespace MDSDK
             return (tablePerRow, skippedCellsPerRow);
         }
 
-        public static Table? GetNextTable(string filename, List<string> fileLines, int lineNumberToStartAtZeroBased = 0)
+        public static Table? GetNextTable(string filename, List<string> fileLines, ref int lineNumberToStartAtZeroBased)
         {
             Table? table = null;
             TableParseState tableParseState = TableParseState.NothingFound;
@@ -200,6 +200,7 @@ namespace MDSDK
             int currentLineNumberOneBased = lineNumberToStartAtZeroBased + 1;
             string? currentTableRowString;
             for (int ix = lineNumberToStartAtZeroBased; ix < fileLines.Count; ++ix)
+            //for (; lineNumberToStartAtZeroBased < fileLines.Count; ++lineNumberToStartAtZeroBased)
             {
                 string eachLineTrimmed = fileLines[ix].Trim();
 
@@ -244,6 +245,11 @@ namespace MDSDK
                         if (currentTableRowString is not null)
                         {
                             table!.AddRowIfCellCountsMatch(filename, currentTableRowString);
+                            if (ix + 1 == fileLines.Count)
+                            {
+                                tableParseState = TableParseState.EndFound;
+                                table!.LastLineNumberOneBased = currentLineNumberOneBased - 1;
+                            }
                         }
                         else
                         {
@@ -256,6 +262,8 @@ namespace MDSDK
                 }
                 ++currentLineNumberOneBased;
             }
+
+            lineNumberToStartAtZeroBased = table!.LastLineNumberOneBased - 1; // To make zero-based.
 
             return table;
         }

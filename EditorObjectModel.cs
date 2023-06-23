@@ -21,11 +21,15 @@ namespace MDSDKBase
         NothingFound,
         YamlFrontmatterFound,
         ContentAfterYamlFrontmatterFound,
-        DescriptionFound,
+        H1Found,
         SyntaxFound,
-        HeadingFound,
-        RemarksFound,
-        RequirementsFound,
+        ChildElementsH2Found,
+        ChildElementsH2BetweenSections,
+        ChildElementH3Found,
+        OtherHeadingFound,
+        RemarksH2Found,
+        RequirementsH2Found,
+        BetweenSections,
         EndFound
     }
 
@@ -34,6 +38,23 @@ namespace MDSDKBase
         public void AppendLine(string line)
         {
             this.Add(line);
+        }
+    }
+
+    internal class EditorObjectModelChildElementsH3Section
+    {
+        public string Element { get; private set; }
+        public TopicLines Lines { get; private set; }
+
+        public EditorObjectModelChildElementsH3Section(string elementName)
+        {
+            this.Element = elementName.Substring(4); // Remove the "### ".
+            this.Lines = new TopicLines();
+        }
+
+        public void AppendLineToChildElementsH3Section(string line)
+        {
+            this.Lines.AppendLine(line);
         }
     }
 
@@ -46,7 +67,10 @@ namespace MDSDKBase
         public EditorObjectModelYamlFrontmatter? YamlFrontmatter { get; private set; }
         public TopicLines Description { get; private set; }
         public TopicLines Remarks { get; private set; }
+        public Table? ChildElementsTable { get; private set; }
         public Table? RequirementsTable { get; private set; }
+
+        public List<EditorObjectModelChildElementsH3Section>? ChildElementsH3Sections { get; private set; }
 
         public EditorObjectModel()
         {
@@ -60,9 +84,34 @@ namespace MDSDKBase
             this.Description.AppendLine(line);
         }
 
+        public EditorObjectModelChildElementsH3Section AppendChildElementsH3Section(string elementName)
+        {
+            var childElementsH3Section = new EditorObjectModelChildElementsH3Section(elementName);
+            this.ChildElementsH3Sections ??= new List<EditorObjectModelChildElementsH3Section>();
+            this.ChildElementsH3Sections.Add(childElementsH3Section);
+            return childElementsH3Section;
+        }
+
+        public TopicLines? FindChildElementsH3SectionTopicLinesForElement(string element)
+        {
+            if (this.ChildElementsH3Sections is not null)
+            {
+                foreach (var childElementsH3Section in this.ChildElementsH3Sections)
+                {
+                    if (childElementsH3Section.Element == element) return childElementsH3Section.Lines;
+                }
+            }
+            return null;
+        }
+
         public void AppendLineToRemarks(string line)
         {
             this.Remarks.AppendLine(line);
+        }
+
+        public void SetChildElementsTable(Table? childElementsTable)
+        {
+            this.ChildElementsTable = childElementsTable;
         }
 
         public void SetRequirementsTable(Table? requirementsTable)
