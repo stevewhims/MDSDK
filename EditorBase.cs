@@ -9,8 +9,10 @@ using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Runtime;
 using System.Text.RegularExpressions;
 using System.Transactions;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.Serialization;
@@ -60,6 +62,11 @@ namespace MDSDKBase
         public static string TBDSentenceString = "TBD";
         public static string NoneSentenceString = "None.";
 
+        public static string YamlFrontmatterDelimiter = "---";
+        public static string CodeBlockSyntaxStartDelimiter = "```syntax";
+        public static string CodeBlockSyntaxXsdDelimiter = "```XSD";
+        public static string CodeBlockEndDelimiter = "```";
+
         private static Regex DeconstructHyperlinkRegex = new Regex(@"\[(?<link_text>.*)\]\((?<link_url>.*)\)", RegexOptions.Compiled);
         private static Regex TwoSpacesRegex = new Regex("  ", RegexOptions.Compiled);
         private static Regex MsAssetIdRegex = new Regex(@"ms.assetid: (?<ms_asset_id>.*)", RegexOptions.Compiled);
@@ -75,6 +82,20 @@ namespace MDSDKBase
 
         private static string InterfaceTopicMethodsH2 = "## Methods";
         private static string StructureTopicStructFieldsH2 = "## -struct-fields";
+
+        private static string LiteralAllElements = "All elements";
+        private static string LiteralParentElements = "Parent elements";
+        private static string LiteralChildElements = "Child elements";
+        private static string LiteralRemarks = "Remarks";
+        private static string LiteralExamples = "Examples";
+        private static string LiteralRequirements = "Requirements";
+
+        private static string TopicAllElementsH2 = $"## {EditorBase.LiteralAllElements}";
+        private static string TopicParentElementsH2 = $"## {EditorBase.LiteralParentElements}";
+        private static string TopicChildElementsH2 = $"## {EditorBase.LiteralChildElements}";
+        private static string TopicRemarksH2 = $"## {EditorBase.LiteralRemarks}";
+        private static string TopicExamplesH2 = $"## {EditorBase.LiteralExamples}";
+        private static string TopicRequirementsH2 = $"## {EditorBase.LiteralRequirements}";
 
         private static string BulletPointPlusSpace = "* ";
 
@@ -136,7 +157,8 @@ namespace MDSDKBase
             var editorBaseTopicSection = EditorObjectModelTopicSection.NothingFound;
             while (ix < this.fileLines.Count)
             {
-                string eachLineTrimmed = this.fileLines[ix].Trim();
+                string eachLine = this.fileLines[ix];
+                string eachLineTrimmed = eachLine.Trim();
                 bool moveToNextLine = true;
                 switch (editorBaseTopicSection)
                 {
@@ -183,7 +205,7 @@ namespace MDSDKBase
                         }
                         else
                         {
-                            this.EditorObjectModel.AppendLineToDescription(eachLineTrimmed);
+                            this.EditorObjectModel.AppendLineToDescription(eachLine);
                         }
                         break;
 
@@ -220,7 +242,7 @@ namespace MDSDKBase
                     case EditorObjectModelTopicSection.ChildElementH3Found:
                         if (eachLineTrimmed.StartsWith("### "))
                         {
-                            childElementsH2Section = this.EditorObjectModel.AppendChildElementsH3Section(eachLineTrimmed);
+                            childElementsH2Section = this.EditorObjectModel.AppendChildElementsH3Section(eachLine);
                         }
                         else if (eachLineTrimmed.StartsWith("#"))
                         {
@@ -231,7 +253,7 @@ namespace MDSDKBase
                         {
                             if (childElementsH2Section is not null)
                             {
-                                childElementsH2Section.AppendLineToChildElementsH3Section(eachLineTrimmed);
+                                childElementsH2Section.AppendLineToChildElementsH3Section(eachLine);
                             }
                         }
                         break;
@@ -245,15 +267,19 @@ namespace MDSDKBase
                         break;
 
                     case EditorObjectModelTopicSection.OtherHeadingFound:
-                        if (eachLineTrimmed == "## Child elements")
+                        if (eachLineTrimmed == EditorBase.TopicChildElementsH2)
                         {
                             editorBaseTopicSection = EditorObjectModelTopicSection.ChildElementsH2Found; // H2 found, and moved to next line.
                         }
-                        else if (eachLineTrimmed == "## Remarks")
+                        else if (eachLineTrimmed == EditorBase.TopicRemarksH2)
                         {
                             editorBaseTopicSection = EditorObjectModelTopicSection.RemarksH2Found; // H2 found, and moved to next line.
                         }
-                        else if (eachLineTrimmed == "## Requirements")
+                        else if (eachLineTrimmed == EditorBase.TopicExamplesH2)
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.ExamplesH2Found; // H2 found, and moved to next line.
+                        }
+                        else if (eachLineTrimmed == EditorBase.TopicRequirementsH2)
                         {
                             editorBaseTopicSection = EditorObjectModelTopicSection.RequirementsH2Found; // H2 found, and moved to next line.
                         }
@@ -267,7 +293,19 @@ namespace MDSDKBase
                         }
                         else
                         {
-                            this.EditorObjectModel.AppendLineToRemarks(eachLineTrimmed);
+                            this.EditorObjectModel.AppendLineToRemarks(eachLine);
+                        }
+                        break;
+
+                    case EditorObjectModelTopicSection.ExamplesH2Found:
+                        if (eachLineTrimmed.StartsWith("#"))
+                        {
+                            editorBaseTopicSection = EditorObjectModelTopicSection.OtherHeadingFound;
+                            moveToNextLine = false;
+                        }
+                        else
+                        {
+                            this.EditorObjectModel.AppendLineToExamples(eachLine);
                         }
                         break;
 
@@ -1368,8 +1406,26 @@ namespace MDSDKBase
             }
         }
 
-        public void Write(TopicLines topicLines)
+        public void Write(TopicLines topicLines, bool omitFirstBlankLine = false)
         {
+            bool omittedFirstBlankLine = false;
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+            {
+                foreach (var line in topicLines)
+                {
+                    if (line == string.Empty && omitFirstBlankLine && !omittedFirstBlankLine)
+                    {
+                        omittedFirstBlankLine = true;
+                        continue;
+                    }
+                    streamWriter.WriteLine(line);
+                }
+            }
+        }
+
+        public void WriteRemarks(TopicLines topicLines)
+        {
+            this.WriteSectionHeadingRemarks();
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
                 foreach (var line in topicLines)
@@ -1379,17 +1435,14 @@ namespace MDSDKBase
             }
         }
 
-        public void WriteRemarks(TopicLines topicLines)
+        public void WriteExamples(TopicLines topicLines)
         {
-            if (topicLines.Count != 0)
+            this.WriteSectionHeadingExamples();
+            using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                this.WriteSectionHeadingRemarks();
-                using (StreamWriter streamWriter = this.FileInfo!.AppendText())
+                foreach (var line in topicLines)
                 {
-                    foreach (var line in topicLines)
-                    {
-                        streamWriter.WriteLine(line);
-                    }
+                    streamWriter.WriteLine(line);
                 }
             }
         }
@@ -1433,12 +1486,12 @@ namespace MDSDKBase
 
         public void WriteBeginYamlFrontmatter()
         {
-            this.WriteLine(EditorObjectModel.YamlFrontmatterDelimiter);
+            this.WriteLine(EditorBase.YamlFrontmatterDelimiter);
         }
 
         public void WriteEndYamlFrontmatter()
         {
-            this.WriteLine(EditorObjectModel.YamlFrontmatterDelimiter);
+            this.WriteLine(EditorBase.YamlFrontmatterDelimiter);
             this.WriteLine();
         }
 
@@ -1518,7 +1571,7 @@ namespace MDSDKBase
 
         public void WriteBeginSyntax()
         {
-            this.WriteLine(EditorObjectModel.SyntaxStartDelimiter);
+            this.WriteLine(EditorBase.CodeBlockSyntaxXsdDelimiter);
         }
 
         public void WriteBeginComplexTypeElement(XmlSchemaElement xmlSchemaElement, ref int numberOfCharsToIndent)
@@ -1566,6 +1619,7 @@ namespace MDSDKBase
             string attributes = string.Empty;
 
             this.WriteMinOccursAttribute(xmlSchemaElement, ref attributes, numberOfCharsToIndent);
+            this.WriteMaxOccursAttribute(xmlSchemaElement, ref attributes, numberOfCharsToIndent);
 
             if (xmlSchemaElement.SchemaTypeName.Name != string.Empty)
             {
@@ -1651,35 +1705,154 @@ namespace MDSDKBase
             this.WriteLine("</xs:element>");
         }
 
+        public void WriteSimpleType(XmlSchemaSimpleType xmlSchemaSimpleType, ref int numberOfCharsToIndent)
+        {
+            this.WriteBeginSimpleTypeElement(xmlSchemaSimpleType, ref numberOfCharsToIndent);
+
+            if (xmlSchemaSimpleType.DerivedBy == XmlSchemaDerivationMethod.Restriction)
+            {
+                var restriction = xmlSchemaSimpleType.Content as XmlSchemaSimpleTypeRestriction;
+
+                foreach (var item in restriction!.Facets)
+                {
+                    if (item is XmlSchemaEnumerationFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:enumeration value=\"");
+                        this.Write((item as XmlSchemaEnumerationFacet)!.Value!);
+                    }
+                    else if (item is XmlSchemaLengthFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:length value=\"");
+                        this.Write((item as XmlSchemaLengthFacet)!.Value!);
+                    }
+                    else if (item is XmlSchemaMaxInclusiveFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:maxInclusive value=\"");
+                        this.Write((item as XmlSchemaMaxInclusiveFacet)!.Value!);
+                    }
+                    else if (item is XmlSchemaMaxLengthFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:maxLength value=\"");
+                        this.Write((item as XmlSchemaMaxLengthFacet)!.Value!);
+                    }
+                    else if (item is XmlSchemaMinInclusiveFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:minInclusive value=\"");
+                        this.Write((item as XmlSchemaMinInclusiveFacet)!.Value!);
+                    }
+                    else if (item is XmlSchemaMinLengthFacet)
+                    {
+                        this.WriteIndent(numberOfCharsToIndent);
+                        this.Write("<xs:minLength value=\"");
+                        this.Write((item as XmlSchemaMinLengthFacet)!.Value!);
+                    }
+                    else
+                    {
+                        ProgramBase.ConsoleWrite($"Need to handle XmlSchemaSimpleTypeRestriction facet type {item}", ConsoleWriteStyle.Error);
+                        throw new MDSDKException();
+                    }
+                    this.WriteLine("\">");
+                }
+            }
+            else
+            {
+                ProgramBase.ConsoleWrite($"Need to handle xmlSchemaSimpleType.DerivedBy != XmlSchemaDerivationMethod.Restriction", ConsoleWriteStyle.Error);
+                throw new MDSDKException();
+            }
+
+            this.WriteEndSimpleTypeElement(ref numberOfCharsToIndent);
+        }
+
+        public void WriteBeginSimpleTypeElement(XmlSchemaSimpleType xmlSchemaSimpleType, ref int numberOfCharsToIndent)
+        {
+            // Opening simpleType tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("<xs:simpleType>");
+            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+
+            // Opening restriction tag.
+            this.WriteIndent(numberOfCharsToIndent);
+            this.Write("<xs:restriction base=\"");
+
+            switch (xmlSchemaSimpleType.TypeCode)
+            {
+                case XmlTypeCode.HexBinary:
+                    this.Write("xs:hexBinary");
+                    break;
+
+                case XmlTypeCode.Integer:
+                    this.Write("xs:integer");
+                    break;
+
+                case XmlTypeCode.String:
+                    this.Write("xs:string");
+                    break;
+
+                default:
+                    ProgramBase.ConsoleWrite($"Need to handle xmlSchemaSimpleType.TypeCode == {xmlSchemaSimpleType.TypeCode} IN ALL SWITCHES", ConsoleWriteStyle.Error);
+                    throw new MDSDKException();
+            }
+
+            this.WriteLine("\">");
+            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+        }
+
+        public void WriteEndSimpleTypeElement(ref int numberOfCharsToIndent)
+        {
+            // Closing restriction tag.
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:restriction>");
+
+            // Closing simpleType tag.
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:simpleType>");
+
+            EditorBase.DecrementIndent(ref numberOfCharsToIndent);
+            this.WriteIndent(numberOfCharsToIndent);
+            this.WriteLine("</xs:element>");
+        }
+
         public void WriteEndSyntax()
         {
-            this.WriteLine(EditorObjectModel.CodeBlockEndDelimiter);
+            this.WriteLine(EditorBase.CodeBlockEndDelimiter);
             this.WriteLine();
         }
 
         public void WriteSectionHeadingAllElements()
         {
-            this.WriteSectionHeading(2, "All elements");
+            this.WriteSectionHeading(2, EditorBase.LiteralAllElements);
         }
 
         public void WriteSectionHeadingParentElements()
         {
-            this.WriteSectionHeading(2, "Parent elements");
+            this.WriteSectionHeading(2, EditorBase.LiteralParentElements);
         }
 
         public void WriteSectionHeadingChildElements()
         {
-            this.WriteSectionHeading(2, "Child elements");
+            this.WriteSectionHeading(2, EditorBase.LiteralChildElements);
         }
 
         public void WriteSectionHeadingRemarks()
         {
-            this.WriteSectionHeading(2, "Remarks");
+            this.WriteSectionHeading(2, EditorBase.LiteralRemarks);
+        }
+
+        public void WriteSectionHeadingExamples()
+        {
+            this.WriteSectionHeading(2, EditorBase.LiteralExamples);
         }
 
         public void WriteSectionHeadingRequirements()
         {
-            this.WriteSectionHeading(2, "Requirements");
+            this.WriteSectionHeading(2, EditorBase.LiteralRequirements);
         }
 
         public static string RenderBulletPoint(string text)

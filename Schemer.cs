@@ -51,15 +51,15 @@ namespace MDSDK
     {
         private SchemerElementsLandingPageEditor? _schemerElementsLandingPageEditor = null;
         private SchemerComplexTypeElementEditor? _schemerComplexTypeElementEditorRoot = null;
-        private string? _xsdFileName = null;
+        private List<string> _xsdFileNames;
 
-        public Schemer(string topicsRootPath, string topicsFolderName, string schemaDisplayName, string schemaNameForFilenames, string xsdFileName)
+        public Schemer(string topicsRootPath, string topicsFolderName, string schemaDisplayName, string schemaNameForFilenames, List<string> xsdFileNames)
         {
             SchemerEditorBase.DirectoryInfoForExistingTopics = new DirectoryInfo(topicsRootPath + topicsFolderName);
             SchemerEditorBase.DirectoryInfoForNewTopics = new DirectoryInfo(topicsRootPath + topicsFolderName + @"_gen");
             SchemerEditorBase.SchemaDisplayName = schemaDisplayName;
             SchemerEditorBase.SchemaNameForFilenames = schemaNameForFilenames;
-            this._xsdFileName = xsdFileName;
+            this._xsdFileNames = xsdFileNames;
 
             SchemerCustomConfiguration.ReadConfigurationFile(this);
         }
@@ -102,7 +102,9 @@ namespace MDSDK
             {
                 var xmlSchemaSet = new XmlSchemaSet();
                 xmlSchemaSet.ValidationEventHandler += new ValidationEventHandler(ValidationCallback);
-                xmlSchemaSet.Add(null, this._xsdFileName!);
+
+                foreach(var xsdFileName in this._xsdFileNames)
+                xmlSchemaSet.Add(null, xsdFileName);
                 xmlSchemaSet.Compile();
 
                 foreach (XmlSchema xmlSchema in xmlSchemaSet.Schemas())
@@ -256,6 +258,28 @@ namespace MDSDK
             ProgramBase.ConsoleWrite("*** COMMIT PHASE ***", ConsoleWriteStyle.Default, 2);
 
             this._schemerComplexTypeElementEditorRoot!.Commit();
+        }
+
+        public static bool NeedsInlineSimpleType(XmlSchemaElement xmlSchemaElement, XmlSchemaSimpleType? xmlSchemaSimpleType)
+        {
+            if (xmlSchemaElement.SchemaTypeName.Name == string.Empty && xmlSchemaSimpleType is not null)
+            {
+                switch (xmlSchemaSimpleType.TypeCode)
+                {
+                    case XmlTypeCode.HexBinary:
+                    case XmlTypeCode.Integer:
+                    case XmlTypeCode.String:
+                        return true;
+
+                    case XmlTypeCode.Boolean:
+                        return false;
+
+                    default:
+                        ProgramBase.ConsoleWrite($"Need to handle xmlSchemaSimpleType.TypeCode == {xmlSchemaSimpleType.TypeCode} IN ALL SWITCHES", ConsoleWriteStyle.Error);
+                        throw new MDSDKException();
+                }
+            }
+            return false;
         }
     }
 }

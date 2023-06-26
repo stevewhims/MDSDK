@@ -28,6 +28,7 @@ namespace MDSDKBase
         ChildElementH3Found,
         OtherHeadingFound,
         RemarksH2Found,
+        ExamplesH2Found,
         RequirementsH2Found,
         BetweenSections,
         EndFound
@@ -60,13 +61,10 @@ namespace MDSDKBase
 
     internal class EditorObjectModel
     {
-        public static string YamlFrontmatterDelimiter = "---";
-        public static string SyntaxStartDelimiter = "```syntax";
-        public static string CodeBlockEndDelimiter = "```";
-
         public EditorObjectModelYamlFrontmatter? YamlFrontmatter { get; private set; }
         public TopicLines Description { get; private set; }
         public TopicLines Remarks { get; private set; }
+        public TopicLines Examples { get; private set; }
         public Table? ChildElementsTable { get; private set; }
         public Table? RequirementsTable { get; private set; }
 
@@ -76,7 +74,8 @@ namespace MDSDKBase
         {
             this.YamlFrontmatter = new EditorObjectModelYamlFrontmatter();
             this.Description = new TopicLines();
-            this.Remarks = new TopicLines();
+            //this.Remarks = new TopicLines();
+            //this.Examples = new TopicLines();
         }
 
         public void AppendLineToDescription(string line)
@@ -106,7 +105,14 @@ namespace MDSDKBase
 
         public void AppendLineToRemarks(string line)
         {
+            this.Remarks ??= new TopicLines();
             this.Remarks.AppendLine(line);
+        }
+
+        public void AppendLineToExamples(string line)
+        {
+            this.Examples ??= new TopicLines();
+            this.Examples.AppendLine(line);
         }
 
         public void SetChildElementsTable(Table? childElementsTable)

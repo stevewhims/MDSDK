@@ -200,7 +200,6 @@ namespace MDSDK
             int currentLineNumberOneBased = lineNumberToStartAtZeroBased + 1;
             string? currentTableRowString;
             for (int ix = lineNumberToStartAtZeroBased; ix < fileLines.Count; ++ix)
-            //for (; lineNumberToStartAtZeroBased < fileLines.Count; ++lineNumberToStartAtZeroBased)
             {
                 string eachLineTrimmed = fileLines[ix].Trim();
 
@@ -263,7 +262,7 @@ namespace MDSDK
                 ++currentLineNumberOneBased;
             }
 
-            lineNumberToStartAtZeroBased = table!.LastLineNumberOneBased - 1; // To make zero-based.
+            if (table is not null) lineNumberToStartAtZeroBased = table.LastLineNumberOneBased - 1; // To make zero-based.
 
             return table;
         }

@@ -70,6 +70,7 @@ namespace MDSDK
     internal class SchemerCustomConfigurationSyntaxComment
     {
         public List<string> Lines { get; private set; }
+        public string? ComesBefore { get; private set; }
         public string? ComesAfter { get; private set; }
 
         public SchemerCustomConfigurationSyntaxComment(StreamReader streamReader)
@@ -94,7 +95,11 @@ namespace MDSDK
                 }
             }
 
-            if (SchemerCustomConfiguration.GetConfigValue(currentLine!, SchemerCustomConfiguration.H2_SYNTAXCOMMENT_COMESAFTER_CONFIG_KEY, ref value))
+            if (SchemerCustomConfiguration.GetConfigValue(currentLine!, SchemerCustomConfiguration.H2_SYNTAXCOMMENT_COMESBEFORE_CONFIG_KEY, ref value))
+            {
+                this.ComesBefore = value;
+            }
+            else if (SchemerCustomConfiguration.GetConfigValue(currentLine!, SchemerCustomConfiguration.H2_SYNTAXCOMMENT_COMESAFTER_CONFIG_KEY, ref value))
             {
                 this.ComesAfter = value;
             }
@@ -154,6 +159,7 @@ namespace MDSDK
 
         public const string H1_SYNTAXCOMMENT_CONFIG_KEY = "# SyntaxComment";
         public const string H2_SYNTAXCOMMENT_LINES_CONFIG_KEY = "## SyntaxComment.Lines";
+        public const string H2_SYNTAXCOMMENT_COMESBEFORE_CONFIG_KEY = "## SyntaxComment.ComesBefore";
         public const string H2_SYNTAXCOMMENT_COMESAFTER_CONFIG_KEY = "## SyntaxComment.ComesAfter";
 
         public const string H1_UNIQUEIFICATION_CONFIG_KEY = "# Uniqueification";
@@ -228,6 +234,15 @@ namespace MDSDK
             foreach (var schemerCustomConfigurationAppendixElement in SchemerCustomConfiguration._schemerCustomConfigurationAppendixElements)
             {
                 if (schemerCustomConfigurationAppendixElement.ComesAfter == comesAfterElement) return schemerCustomConfigurationAppendixElement;
+            }
+            return null;
+        }
+
+        public static SchemerCustomConfigurationSyntaxComment? FindSchemerCustomConfigurationSyntaxCommentForComesBeforeElement(string comesBeforeElement)
+        {
+            foreach (var schemerCustomConfigurationSyntaxComment in SchemerCustomConfiguration._schemerCustomConfigurationSyntaxComments)
+            {
+                if (schemerCustomConfigurationSyntaxComment.ComesBefore == comesBeforeElement) return schemerCustomConfigurationSyntaxComment;
             }
             return null;
         }

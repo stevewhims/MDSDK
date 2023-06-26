@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -311,7 +312,14 @@ namespace MDSDK
 
             if (this.SchemerElementExistingTopicEditor is not null)
             {
-                this.WriteRemarks(this.SchemerElementExistingTopicEditor!.EditorObjectModel.Remarks!);
+                if (this.SchemerElementExistingTopicEditor!.EditorObjectModel.Remarks is not null)
+                {
+                    this.WriteRemarks(this.SchemerElementExistingTopicEditor!.EditorObjectModel.Remarks);
+                }
+                if (this.SchemerElementExistingTopicEditor!.EditorObjectModel.Examples is not null)
+                {
+                    this.WriteExamples(this.SchemerElementExistingTopicEditor!.EditorObjectModel.Examples);
+                }
             }
 
             this.WriteSectionHeadingRequirements();
@@ -345,7 +353,7 @@ namespace MDSDK
 
             this.GenerateSyntaxForImmediateChildren(ref numberOfCharsToIndent);
 
-            WriteEndComplexTypeElement(ref numberOfCharsToIndent);
+            this.WriteEndComplexTypeElement(ref numberOfCharsToIndent);
         }
 
         private void GenerateSyntaxForImmediateChildren(ref int numberOfCharsToIndent)
@@ -360,14 +368,35 @@ namespace MDSDK
                     }
                     else
                     {
-                        this.WriteOpeningElementTag((childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis, ref numberOfCharsToIndent);
+                        XmlSchemaElement xmlSchemaElement = (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis;
+                        XmlSchemaSimpleType? xmlSchemaSimpleType = xmlSchemaElement.ElementSchemaType as XmlSchemaSimpleType;
 
                         string qualifiedName = SchemerComplexTypeElementEditor.RenderElementNameForXmlSchemaElement(this.XmlSchemaElement.Name, (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis);
 
-                        SchemerCustomConfigurationSyntaxComment? syntaxComment = SchemerCustomConfiguration.FindSchemerCustomConfigurationSyntaxCommentForComesAfterElement(qualifiedName);
-                        if (syntaxComment != null)
+                        SchemerCustomConfigurationSyntaxComment? syntaxCommentBefore = SchemerCustomConfiguration.FindSchemerCustomConfigurationSyntaxCommentForComesBeforeElement(qualifiedName);
+                        if (syntaxCommentBefore is not null)
                         {
-                            string syntaxCommentString = syntaxComment.Render(numberOfCharsToIndent);
+                            string syntaxCommentString = syntaxCommentBefore.Render(numberOfCharsToIndent);
+                            this.Write(syntaxCommentString);
+                        }
+
+                        bool needsInlineSimpleType = Schemer.NeedsInlineSimpleType(xmlSchemaElement, xmlSchemaSimpleType);
+
+                        if (needsInlineSimpleType)
+                        {
+                            this.WriteOpeningElementTag(xmlSchemaElement, ref numberOfCharsToIndent, true);
+                            EditorBase.IncrementIndent(ref numberOfCharsToIndent);
+                            this.WriteSimpleType(xmlSchemaSimpleType!, ref numberOfCharsToIndent);
+                        }
+                        else
+                        {
+                            this.WriteOpeningElementTag(xmlSchemaElement, ref numberOfCharsToIndent);
+                        }
+
+                        SchemerCustomConfigurationSyntaxComment? syntaxCommentAfter = SchemerCustomConfiguration.FindSchemerCustomConfigurationSyntaxCommentForComesAfterElement(qualifiedName);
+                        if (syntaxCommentAfter is not null)
+                        {
+                            string syntaxCommentString = syntaxCommentAfter.Render(numberOfCharsToIndent);
                             this.Write(syntaxCommentString);
                         }
                     }
@@ -387,7 +416,7 @@ namespace MDSDK
 
             if (this._parent is not null)
             {
-                this.WriteBulletPoint(EditorBase.RenderHyperlink(this._parent.RenderElementName(), @"./" + this._parent.FileInfo!.Name));
+                this.WriteBulletPoint(EditorBase.RenderHyperlink(this._parent.RenderElementName(), @"./" + this._parent.FileInfo!.Name, true));
             }
             else
             {
@@ -461,10 +490,23 @@ namespace MDSDK
 
                 if (childElementAdapter is ChildElementAdapterTopic)
                 {
+                    // Child is a topic element.
                     elementCell = EditorBase.RenderHyperlink(
                         (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.XmlSchemaElement.Name!,
                         @"./" + (childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.FileInfo!.Name,
                         true);
+
+                    Table? childElementsTable = this.SchemerElementExistingTopicEditor?.EditorObjectModel.ChildElementsTable;
+                    if (childElementsTable is not null)
+                    {
+                        foreach (var eachRow in childElementsTable.Rows)
+                        {
+                            if (eachRow.RowCells[0] == elementCell)
+                            {
+                                typeCell = eachRow.RowCells[1];
+                            }
+                        }
+                    }
 
                     if ((childElementAdapter as ChildElementAdapterTopic)!.SchemerComplexTypeElementEditorThatIsAChildOfThis.SchemerElementExistingTopicEditor is not null)
                     {
@@ -478,6 +520,7 @@ namespace MDSDK
                 }
                 else
                 {
+                    // Child is a non-topic element.
                     elementCell = EditorBase.RenderHyperlink(
                         (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!,
                         @"#" + (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!.ToLower(),
@@ -498,6 +541,7 @@ namespace MDSDK
                             {
                                 if (eachRow.RowCells[0] == elementCell)
                                 {
+                                    if (eachRow.RowCells[1] != string.Empty) typeCell = eachRow.RowCells[1];
                                     descriptionCell = eachRow.RowCells[2];
                                 }
                             }
@@ -544,27 +588,40 @@ namespace MDSDK
             {
                 if (childElementAdapter is ChildElementAdapterNonTopic)
                 {
+                    bool didWeWriteADescription = false;
+
                     this.WriteSectionHeading(3, (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!);
 
                     if ((childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor is not null)
                     {
                         TopicLines description = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.EditorObjectModel.Description;
                         this.Write(description);
+                        didWeWriteADescription = true;
+
+                        TopicLines? remarks = (childElementAdapter as ChildElementAdapterNonTopic)!.SchemerElementExistingTopicEditor!.EditorObjectModel.Remarks;
+                        if (remarks is not null) this.Write(remarks, true);
                     }
                     else if (this.SchemerElementExistingTopicEditor is not null)
                     {
                         TopicLines? childElementsH3SectionTopicLines =
                             this.SchemerElementExistingTopicEditor.EditorObjectModel.FindChildElementsH3SectionTopicLinesForElement(
                                 (childElementAdapter as ChildElementAdapterNonTopic)!.XmlSchemaElementThatIsAChildOfThis.Name!);
-                        if (childElementsH3SectionTopicLines is not null) this.Write(childElementsH3SectionTopicLines);
+
+                        if (childElementsH3SectionTopicLines is not null)
+                        {
+                            this.Write(childElementsH3SectionTopicLines);
+                            didWeWriteADescription = true;
+                        }
                     }
-                    else
+
+                    if (!didWeWriteADescription)
                     {
                         this.WriteLine();
                         this.WriteLine(EditorBase.TBDSentenceString);
                         this.WriteLine();
                     }
                 }
+
                 generatedAtLeastOneSection = true;
             }
 
@@ -576,7 +633,14 @@ namespace MDSDK
             this.WriteLine();
             using (StreamWriter streamWriter = this.FileInfo!.AppendText())
             {
-                streamWriter.WriteLine(this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable?.Render()); // Yes, that ? is intentional.
+                if (this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable is not null)
+                {
+                    streamWriter.WriteLine(this.SchemerElementExistingTopicEditor!.EditorObjectModel.RequirementsTable?.Render()); // Yes, that ? is intentional.
+                }
+                else
+                {
+                    streamWriter.WriteLine("TBD");
+                }
             }
         }
 
